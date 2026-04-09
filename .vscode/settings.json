@@ -1,0 +1,21 @@
+{
+  "editor.formatOnSave": true,
+  "oxc.fmt.configPath": "./.oxfmtrc.json",
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "i18n-ally.localesPaths": [
+    "i18n",
+    "messages"
+  ]
+}

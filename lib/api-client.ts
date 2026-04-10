@@ -34,8 +34,9 @@ import {
   type ListMediaFilesResponse,
   type CreateGatewayRequest,
 } from "@repo/api-client";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 
-const API_BASE_URL = process.env.BACKEND_URL || "/";
+const API_BASE_URL = getApiBaseUrl();
 
 class ZustandTokenStore implements TokenStore {
   private getStore() {

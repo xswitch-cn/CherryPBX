@@ -13,6 +13,7 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { toast } from "sonner";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -132,7 +133,7 @@ export function CdrTable({
   const apiClient = React.useMemo(
     () =>
       createClient({
-        baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "/api",
+        baseUrl: getApiBaseUrl(),
       }),
     [],
   );

@@ -42,14 +42,14 @@ export function createCdrsApi(client: ApiClient) {
     me() {
       return client.request<Cdr>({
         method: "GET",
-        path: "/cdrs/me",
+        path: "/api/cdrs/me",
       });
     },
 
     list(query?: ListCdrsQuery) {
       return client.request<ListCdrsResponse>({
         method: "GET",
-        path: "/cdrs",
+        path: "/api/cdrs",
         query,
       });
     },
@@ -57,21 +57,21 @@ export function createCdrsApi(client: ApiClient) {
     getById(id: string) {
       return client.request<Cdr>({
         method: "GET",
-        path: `/cdrs/${encodeURIComponent(id)}`,
+        path: `/api/cdrs/${encodeURIComponent(id)}`,
       });
     },
 
     getRelatedCdrs(id: string) {
       return client.request<RelatedCdr[]>({
         method: "GET",
-        path: `/cdrs/${encodeURIComponent(id)}/related_cdrs`,
+        path: `/api/cdrs/${encodeURIComponent(id)}/related_cdrs`,
       });
     },
 
     getMediaFiles(uuid: string) {
       return client.request<MediaFile[]>({
         method: "GET",
-        path: "/media_files",
+        path: "/api/media_files",
         query: { uuid },
       });
     },

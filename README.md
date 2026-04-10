@@ -43,7 +43,12 @@ make env
 
 Check Makefile to find out how to do that manually if you don't have a `make` command on your computer.
 
-Change `BACKEND_URL` to point to your XSwitch server URL before developing or running the application. It defaults to `https://demo.xswitch.cn`, which is a public demo. Visit https://docs.xswitch.cn/faq/#demo to find the username and password for logging in. Alternatively you can point to your own server (e.g. `http://localhost:8081`) if you installed XSwitch locally.
+Configure the environment variables before developing or running the application:
+
+- `NEXT_PUBLIC_BACKEND_URL` is the frontend request base and should normally stay as `/`.
+- `NEXT_PUBLIC_BACKEND_URL_TARGET` is the real XSwitch backend root URL. It defaults to `https://demo.xswitch.cn`, which is a public demo. Visit https://docs.xswitch.cn/faq/#demo to find the username and password for logging in. Alternatively you can point it to your own server (for example `http://localhost:8081`).
+
+The browser calls same-origin `/api/...` endpoints first, and Next.js proxies them to `NEXT_PUBLIC_BACKEND_URL_TARGET` through rewrites to avoid CORS issues in local development and Docker deployment.
 
 ## Install dependencies
 
@@ -67,6 +72,46 @@ make build
 ```
 
 node version >= 20.x.x
+
+## Docker Build
+
+The Docker deployment files live in [`docker/`](./docker).
+
+Before building the image, update [`docker/.env`](./docker/.env) or create it from the example:
+
+```bash
+cd docker
+cp .env.example .env
+```
+
+Set the Docker environment variables as follows:
+
+```env
+NEXT_PUBLIC_BACKEND_URL="/"
+NEXT_PUBLIC_BACKEND_URL_TARGET="https://your-xswitch-host"
+```
+
+Build and start the production container:
+
+```bash
+cd docker
+make build-production
+make start-production
+```
+
+Stop the production container:
+
+```bash
+cd docker
+make stop-production
+```
+
+Notes:
+
+- `NEXT_PUBLIC_BACKEND_URL` should normally remain `/`.
+- `NEXT_PUBLIC_BACKEND_URL_TARGET` must be the backend root URL and should not include `/api`.
+- The Docker image builds the app with `next build --webpack` and runs the standalone Next.js server on port `3000`.
+- [`docker/compose.yaml`](./docker/compose.yaml) uses an external Docker network named `webapp`. Create it first if it does not already exist: `docker network create webapp`.
 
 ## Lint
 

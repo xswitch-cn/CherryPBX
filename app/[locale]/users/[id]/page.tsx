@@ -43,13 +43,12 @@ import {
   type SelectOption,
 } from "@/components/ui/editable-section";
 import { use } from "react";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 
-// 创建 API 客户端
 const apiClient = createClient({
-  baseUrl: process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "/",
+  baseUrl: getApiBaseUrl(),
 });
 
-// 创建用户 API
 const usersApi: UsersApi = createUsersApi(apiClient);
 
 interface UserDetailsPageProps {

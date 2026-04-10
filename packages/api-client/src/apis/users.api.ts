@@ -48,7 +48,7 @@ export function createUsersApi(client: ApiClient): UsersApi {
     me() {
       return client.request<User>({
         method: "GET",
-        path: "/users/me",
+        path: "/api/users/me",
       });
     },
 

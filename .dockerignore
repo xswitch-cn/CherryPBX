@@ -1,0 +1,13 @@
+.git
+.gitignore
+.next
+.vscode
+node_modules
+packages/api-client/dist
+docker/.env
+docker/.env.example
+docker/README.md
+dist
+out
+coverage
+*.log

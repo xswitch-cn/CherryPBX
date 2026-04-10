@@ -408,7 +408,7 @@ export default function UsersPage() {
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" onClick={() => void handleExportUsers()}>
                         <DownloadIcon className="mr-2 h-4 w-4" />
-                        导出
+                        {tt("export")}
                       </Button>
 
                       <Button
@@ -417,11 +417,11 @@ export default function UsersPage() {
                         onClick={() => setIsImportModalOpen(true)}
                       >
                         <UploadIcon className="mr-2 h-4 w-4" />
-                        导入
+                        {tt("import")}
                       </Button>
 
                       <Button size="sm" onClick={() => setIsBatchSettingsOpen(true)}>
-                        批量设置
+                        {tt("batchSettings")}
                       </Button>
                     </div>
                     <Button size="sm" onClick={() => setIsCreateOpen(true)}>
@@ -490,7 +490,7 @@ export default function UsersPage() {
       <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>导入</DialogTitle>
+            <DialogTitle>{tt("importTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div
@@ -515,16 +515,16 @@ export default function UsersPage() {
               <CloudUploadIcon className="mx-auto h-16 w-16 text-primary mb-6" />
               <div className="space-y-4">
                 <p className="text-sm text-gray-600">
-                  请将文件拖拽至此处或
+                  {tt("dragFiles")}
                   <Button
                     variant="default"
                     className="ml-2 bg-primary text-white hover:bg-primary/90"
                     onClick={() => document.getElementById("file-upload")?.click()}
                   >
-                    选择文件
+                    {tt("selectFile")}
                   </Button>
                 </p>
-                <p className="text-xs text-gray-500">仅支持.xls和.xlsx文件</p>
+                <p className="text-xs text-gray-500">{tt("fileFormatHint")}</p>
               </div>
               <input
                 type="file"
@@ -549,7 +549,7 @@ export default function UsersPage() {
                       size="sm"
                       onClick={() => setImportFiles((prev) => prev.filter((_, i) => i !== index))}
                     >
-                      删除
+                      {tt("deleteFile")}
                     </Button>
                   </div>
                 ))}
@@ -564,14 +564,14 @@ export default function UsersPage() {
                   setImportFiles([]);
                 }}
               >
-                关闭
+                {tt("closeImport")}
               </Button>
               <Button
                 onClick={() => void handleImport()}
                 className="ml-2 bg-primary text-white hover:bg-primary/90"
                 disabled={importFiles.length === 0}
               >
-                提交
+                {tt("submitImport")}
               </Button>
             </DialogFooter>
           </div>

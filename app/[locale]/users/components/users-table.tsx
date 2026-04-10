@@ -340,6 +340,7 @@ export function BatchSettingsDialog({
   onSelectionChange,
   onSubmit,
 }: BatchSettingsDialogProps) {
+  const t = useTranslations("users");
   const [isUserSelectOpen, setIsUserSelectOpen] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
     new Set(selectedUsers.map((user) => user.id)),
@@ -404,8 +405,7 @@ export function BatchSettingsDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>批量设置</DialogTitle>
-            <DialogDescription>选择用户并设置类型</DialogDescription>
+            <DialogTitle>{t("batchSettings")}</DialogTitle>
           </DialogHeader>
 
           <Form {...form}>
@@ -418,7 +418,6 @@ export function BatchSettingsDialog({
               <div className="grid gap-6 py-6">
                 {/* 选择用户 */}
                 <div className="flex flex-col gap-2">
-                  <FormLabel>请选择用户</FormLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -428,7 +427,9 @@ export function BatchSettingsDialog({
                     <BookOpenIcon
                       className={`mr-2 h-4 w-4 ${selectedUsers.length > 0 ? "text-green-500" : "text-muted-foreground"}`}
                     />
-                    {selectedUsers.length > 0 ? `已选择: ${selectedUsers.length}` : "请选择用户"}
+                    {selectedUsers.length > 0
+                      ? t("selectedCount", { count: selectedUsers.length })
+                      : t("selectUsers")}
                   </Button>
                 </div>
 
@@ -440,16 +441,16 @@ export function BatchSettingsDialog({
                     <div className="flex flex-col gap-2">
                       <FormLabel>
                         <span className="text-destructive mr-1">*</span>
-                        类型
+                        {t("type")}
                       </FormLabel>
                       <FormControl>
                         <Select value={field.value} onValueChange={field.onChange}>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="请选择类型" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="AGENT">坐席</SelectItem>
-                            <SelectItem value="NORMAL">普通</SelectItem>
+                            <SelectItem value="AGENT">{t("agent")}</SelectItem>
+                            <SelectItem value="NORMAL">{t("normal")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -460,14 +461,14 @@ export function BatchSettingsDialog({
 
               <DialogFooter className="flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  取消
+                  {t("cancelBatch")}
                 </Button>
                 <Button
                   type="submit"
                   disabled={form.formState.isSubmitting}
                   className="bg-green-500 hover:bg-green-600"
                 >
-                  确定
+                  {t("confirmBatch")}
                 </Button>
               </DialogFooter>
             </form>
@@ -479,7 +480,7 @@ export function BatchSettingsDialog({
       <Dialog open={isUserSelectOpen} onOpenChange={setIsUserSelectOpen}>
         <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
-            <DialogTitle>请选择用户</DialogTitle>
+            <DialogTitle>{t("selectUsersTitle")}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-4">
             {/* 左侧用户列表 */}
@@ -498,7 +499,7 @@ export function BatchSettingsDialog({
                     onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
                   />
                   <label htmlFor="select-all" className="ml-2 text-sm font-medium">
-                    全选
+                    {t("selectAll")}
                   </label>
                 </div>
                 {/* 用户列表 */}
@@ -531,7 +532,7 @@ export function BatchSettingsDialog({
             <div className="col-span-1 flex flex-col items-center justify-center">
               {selectedUserIds.size > 0 ? (
                 <div className="w-full">
-                  <h4 className="text-sm font-medium mb-2">已选择用户</h4>
+                  <h4 className="text-sm font-medium mb-2">{t("selectedUsers")}</h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {allUsers
                       .filter((user) => selectedUserIds.has(user.id))
@@ -546,17 +547,17 @@ export function BatchSettingsDialog({
               ) : (
                 <div className="flex flex-col items-center justify-center">
                   <FileIcon className="h-12 w-12 text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground">暂无数据</p>
+                  <p className="text-muted-foreground">{t("noSelectedData")}</p>
                 </div>
               )}
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setIsUserSelectOpen(false)}>
-              取消
+              {t("cancelBatch")}
             </Button>
             <Button type="button" onClick={handleUserSelectConfirm}>
-              确定
+              {t("confirmBatch")}
             </Button>
           </DialogFooter>
         </DialogContent>

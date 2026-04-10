@@ -10,9 +10,10 @@ import { CdrTable } from "./components/cdr-table";
 import { createClient, createCdrsApi, type Cdr, type ListCdrsQuery } from "@repo/api-client";
 import { ListPagination } from "@/components/ui/list-components";
 import { toast } from "sonner";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 
 const apiClient = createClient({
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "/api",
+  baseUrl: getApiBaseUrl(),
 });
 const cdrsApi = createCdrsApi(apiClient);
 

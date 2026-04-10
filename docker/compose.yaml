@@ -1,0 +1,21 @@
+services:
+  ippbx:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: runner
+      args:
+        APP_VERSION: ${APP_VERSION}
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
+        NEXT_PUBLIC_BACKEND_URL_TARGET: ${NEXT_PUBLIC_BACKEND_URL_TARGET}
+    image: ${IMAGE_NAME:-ippbx}:${IMAGE_TAG:-latest}
+    container_name: ippbx
+    ports:
+      - "3003:3000"
+    networks:
+      - webapp
+    env_file:
+      - .env
+networks:
+  webapp:
+    external: true

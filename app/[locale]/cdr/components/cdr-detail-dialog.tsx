@@ -340,7 +340,7 @@ export function CdrDetailDialog({ cdr, open, onOpenChange }: CdrDetailDialogProp
                             return (
                               <div key={fileId} className="flex flex-col gap-2">
                                 <Link
-                                  href={`/media_files/${fileId}`}
+                                  href={src}
                                   target="_blank"
                                   className="text-primary hover:underline text-sm"
                                 >
@@ -353,7 +353,7 @@ export function CdrDetailDialog({ cdr, open, onOpenChange }: CdrDetailDialogProp
                             return (
                               <div key={fileId} className="flex flex-col gap-2">
                                 <Link
-                                  href={`/media_files/${fileId}`}
+                                  href={src}
                                   target="_blank"
                                   className="text-primary hover:underline text-sm"
                                 >

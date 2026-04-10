@@ -2,11 +2,10 @@ import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
-  // Config options here
+  output: "standalone",
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL_TARGET;
 
-    // 只有当 BACKEND_URL 存在且不为空时，才返回代理规则
     if (backendUrl && backendUrl.trim() !== "") {
       return [
         {
@@ -16,9 +15,6 @@ const nextConfig: NextConfig = {
       ];
     }
 
-    // 否则返回空数组，表示“无代理”
-    // 此时 /api/* 请求将直接由 Next.js 处理（通常会导致 404，除非你有 API Routes）
-    // 或者由外部的 Nginx处理
     return [];
   },
 };

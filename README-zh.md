@@ -39,7 +39,12 @@ make env
 
 如果你的电脑没有 `make` 命令，请查看 Makefile 了解如何手动创建。
 
-在开发或运行应用之前，请将 `BACKEND_URL` 修改为你的 XSwitch 服务器地址。默认值为 `https://demo.xswitch.cn`，这是一个公开演示站点。访问 https://docs.xswitch.cn/faq/#demo 查看登录用户名和密码。如果你在本地安装了 XSwitch，你也可以指向你本地的地址，如：`http://localhost:8081`。
+在开发或运行应用之前，请先配置环境变量：
+
+- `NEXT_PUBLIC_BACKEND_URL` 是前端请求前缀，通常保持为 `/` 即可。
+- `NEXT_PUBLIC_BACKEND_URL_TARGET` 是实际的 XSwitch 后端根地址。默认值为 `https://demo.xswitch.cn`，这是一个公开演示站点。访问 https://docs.xswitch.cn/faq/#demo 查看登录用户名和密码。如果你在本地安装了 XSwitch，也可以改为你自己的地址，例如 `http://localhost:8081`。
+
+浏览器端实际会优先请求同源的 `/api/...`，再由 Next.js 通过 rewrites 代理到 `NEXT_PUBLIC_BACKEND_URL_TARGET`，这样本地开发和 Docker 部署时都能避免 CORS 问题。
 
 ## 安装依赖项
 
@@ -60,6 +65,44 @@ make dev
 ```bash
 make build
 ```
+
+## Docker 构建
+
+Docker 部署文件位于 [`docker/`](./docker) 目录。
+
+构建镜像前，请先配置 [`docker/.env`](./docker/.env)，或者从示例文件复制：
+
+```bash
+cd docker
+cp .env.example .env
+```
+
+Docker 环境变量建议这样配置：
+
+```env
+NEXT_PUBLIC_BACKEND_URL="/"
+```
+
+构建并启动生产容器：
+
+```bash
+cd docker
+make build-production
+make start-production
+```
+
+停止生产容器：
+
+```bash
+cd docker
+make stop-production
+```
+
+说明：
+
+- `NEXT_PUBLIC_BACKEND_URL` 通常保持为 `/`。
+- Docker 镜像内部会使用 `next build --webpack` 构建，并以 standalone 模式在 `3000` 端口运行。
+- [`docker/compose.yaml`](./docker/compose.yaml) 依赖一个名为 `webapp` 的外部 Docker 网络；如果不存在，请先执行 `docker network create webapp`。
 
 ## 代码检查
 

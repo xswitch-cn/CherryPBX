@@ -29,10 +29,10 @@ import {
   type HostInfoResponse,
   type SystemStatusResponse,
 } from "@repo/api-client";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 
-// API 客户端
 const apiClient = createClient({
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "/api",
+  baseUrl: getApiBaseUrl(),
 });
 const dashboardApi = createDashboardApi(apiClient);
 

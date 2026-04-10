@@ -62,8 +62,11 @@ make dev
 ## Build
 
 ```bash
+make install                #Install dependencies
 make build
 ```
+
+node version >= 20.x.x
 
 ## Lint
 

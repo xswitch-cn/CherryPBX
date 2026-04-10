@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PBX Management System",
+  title: "PBX",
   description: "Professional PBX management platform",
 };
 

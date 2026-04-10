@@ -78,7 +78,11 @@ export default function Page() {
 
       setSystemStatus(finalData);
 
-      if (finalData.idleCPU?.used) {
+      // 计算 CPU 使用率：100 - 空闲 CPU
+      if (finalData.idleCPU?.allowed) {
+        const idle = parseFloat(finalData.idleCPU.allowed);
+        if (!isNaN(idle)) setCpuUsage(100 - idle);
+      } else if (finalData.idleCPU?.used) {
         const val = parseFloat(finalData.idleCPU.used);
         if (!isNaN(val)) setCpuUsage(100 - val);
       }
@@ -111,16 +115,29 @@ export default function Page() {
       const diskData =
         typeof data === "object" && data !== null && "data" in data ? data.data : data;
 
-      if (diskData && typeof diskData === "object") {
-        const keys = Object.keys(diskData);
-        if (keys.length > 0) {
-          const firstMount = keys[0];
-          const usageStr = (diskData as Record<string, string>)[firstMount];
-          if (typeof usageStr === "string") {
-            const usage = parseFloat(usageStr.replace("%", ""));
-            setDiskUsage(isNaN(usage) ? 0 : usage);
+      if (diskData) {
+        let usage = 0;
+        if (Array.isArray(diskData) && diskData.length > 0) {
+          const firstItem = diskData[0];
+          if (typeof firstItem === "object" && firstItem !== null) {
+            usage = parseFloat(firstItem.usage || firstItem.percent || "0");
+          } else if (typeof firstItem === "number") {
+            usage = firstItem;
+          } else if (typeof firstItem === "string") {
+            usage = parseFloat(firstItem.replace("%", ""));
+          }
+        } else if (typeof diskData === "object") {
+          const keys = Object.keys(diskData);
+          if (keys.length > 0) {
+            const firstMount = keys[0];
+            const usageStr = (diskData as Record<string, string>)[firstMount];
+            if (typeof usageStr === "string") {
+              usage = parseFloat(usageStr.replace("%", ""));
+            }
           }
         }
+
+        setDiskUsage(isNaN(usage) ? 0 : usage);
 
         // 图表
         try {
@@ -147,11 +164,21 @@ export default function Page() {
       const memoryData =
         typeof data === "object" && data !== null && "data" in data ? data.data : data;
 
-      if (memoryData && typeof memoryData === "object") {
-        const used =
-          Number(
-            (memoryData as { physical_memory_usage?: number | string }).physical_memory_usage,
-          ) || 0;
+      if (memoryData) {
+        let used = 0;
+        if (Array.isArray(memoryData) && memoryData.length > 0) {
+          const firstItem = memoryData[0];
+          if (typeof firstItem === "object" && firstItem !== null) {
+            used = Number(firstItem.physical_memory_usage || firstItem.used || 0);
+          } else if (typeof firstItem === "number") {
+            used = firstItem;
+          }
+        } else if (typeof memoryData === "object") {
+          used = Number(
+            (memoryData as { physical_memory_usage?: number | string }).physical_memory_usage || 0,
+          );
+        }
+
         const mb = used / (1024 * 1024);
         setMemoryUsage(isNaN(mb) ? 0 : mb);
 
@@ -172,24 +199,6 @@ export default function Page() {
     }
   }, [tt]);
 
-  // 加载 CPU 状态
-  const loadCpuStats = useCallback(async () => {
-    try {
-      const { data } = await (dashboardApi as any).cpuStats();
-      const cpuData =
-        typeof data === "object" && data !== null && "data" in data ? data.data : data;
-
-      if (cpuData && "cpu_idle" in cpuData) {
-        const idle = Number(cpuData.cpu_idle);
-        setCpuUsage(isNaN(idle) ? 0 : 100 - idle);
-      }
-    } catch (error) {
-      setCpuUsage(2.5);
-      setCpuChartData([2, 2.2, 2.3, 2.4, 2.5, 2.5, 2.5]);
-      toast.error(tt("loadFailed"));
-    }
-  }, [tt]);
-
   // 初始化
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -203,26 +212,16 @@ export default function Page() {
     void loadSipStatus();
     void loadDiskStats();
     void loadMemoryStats();
-    void loadCpuStats();
 
     const interval = setInterval(() => {
       void loadSystemStatus();
       void loadSipStatus();
       void loadDiskStats();
       void loadMemoryStats();
-      void loadCpuStats();
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [
-    router,
-    loadHostInfo,
-    loadSystemStatus,
-    loadSipStatus,
-    loadDiskStats,
-    loadMemoryStats,
-    loadCpuStats,
-  ]);
+  }, [router, loadHostInfo, loadSystemStatus, loadSipStatus, loadDiskStats, loadMemoryStats]);
 
   // 格式化运行时间
   const formatUptime = (uptime?: any) => {

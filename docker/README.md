@@ -23,9 +23,12 @@ Do not include `/api` in `NEXT_PUBLIC_BACKEND_URL_TARGET`.
 make build-production
 ```
 
+This command builds the image directly with `docker build`. `compose.yaml` is only used to start and stop containers.
+
 ## Start
 
 ```bash
+make network
 make start-production
 ```
 
@@ -38,8 +41,5 @@ make stop-production
 ## Notes
 
 - The container listens on port `3000` and is published as `3003:3000` by default.
-- `compose.yaml` uses an external Docker network named `webapp`. Create it first if needed:
-
-```bash
-docker network create webapp
-```
+- `compose.yaml` only starts an already-built image and will not build the image for you.
+- Run `make network` once before starting if the external `webapp` network does not exist yet.

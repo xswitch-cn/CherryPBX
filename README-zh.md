@@ -81,12 +81,14 @@ Docker 环境变量建议这样配置：
 
 ```env
 NEXT_PUBLIC_BACKEND_URL="/"
+NEXT_PUBLIC_BACKEND_URL_TARGET="https://your-xswitch-host"
 ```
 
 构建并启动生产容器：
 
 ```bash
 cd docker
+make network
 make build-production
 make start-production
 ```
@@ -101,8 +103,11 @@ make stop-production
 说明：
 
 - `NEXT_PUBLIC_BACKEND_URL` 通常保持为 `/`。
+- `NEXT_PUBLIC_BACKEND_URL_TARGET` 必须填写后端根地址，不要带 `/api`。
+- 首次启动前先执行 `make network`，用于创建 compose 依赖的外部 `webapp` Docker 网络。
+- `make build-production` 会直接调用 `docker build` 构建镜像，而 [`docker/compose.yaml`](./docker/compose.yaml) 只负责启动和停止已经构建好的镜像。
 - Docker 镜像内部会使用 `next build --webpack` 构建，并以 standalone 模式在 `3000` 端口运行。
-- [`docker/compose.yaml`](./docker/compose.yaml) 依赖一个名为 `webapp` 的外部 Docker 网络；如果不存在，请先执行 `docker network create webapp`。
+- [`docker/compose.yaml`](./docker/compose.yaml) 依赖一个名为 `webapp` 的外部 Docker 网络。
 
 ## 代码检查
 

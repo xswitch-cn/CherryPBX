@@ -95,6 +95,7 @@ Build and start the production container:
 
 ```bash
 cd docker
+make network
 make build-production
 make start-production
 ```
@@ -109,9 +110,10 @@ make stop-production
 Notes:
 
 - `NEXT_PUBLIC_BACKEND_URL` should normally remain `/`.
-- `NEXT_PUBLIC_BACKEND_URL_TARGET` must be the backend root URL and should not include `/api`.
+- Run `make network` once before `make start-production` to create the external `webapp` Docker network when needed.
+- `make build-production` builds the image with `docker build`, while [`docker/compose.yaml`](./docker/compose.yaml) is only used to start and stop the already-built image.
 - The Docker image builds the app with `next build --webpack` and runs the standalone Next.js server on port `3000`.
-- [`docker/compose.yaml`](./docker/compose.yaml) uses an external Docker network named `webapp`. Create it first if it does not already exist: `docker network create webapp`.
+- [`docker/compose.yaml`](./docker/compose.yaml) uses an external Docker network named `webapp`.
 
 ## Lint
 

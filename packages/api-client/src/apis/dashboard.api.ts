@@ -73,7 +73,7 @@ export function createDashboardApi(client: ApiClient) {
     systemStatus() {
       return client.request<SystemStatusResponse>({
         method: "GET",
-        path: "/freeswitch/status",
+        path: "/freeswitch/stats",
       });
     },
 
@@ -93,7 +93,7 @@ export function createDashboardApi(client: ApiClient) {
 
     cpuStats() {
       return client.request<any>({
-        method: "GET",
+        method: "POST",
         path: "/status/cpu",
       });
     },

@@ -454,6 +454,13 @@
     "international": "国际",
     "proxyMedia": "代理媒体",
     "mediaCodec": "媒体编码",
+    "extensionInfo": "扩展信息",
+    "batchSettings": "批量设置路由",
+    "selectRoutes": "请选择路由",
+    "batchSettingsSuccess": "批量设置成功",
+    "batchSettingsFailed": "批量设置失败",
+    "selectBlackWhiteList": "请选择",
+    "selectMediaCodec": "请选择媒体编码",
     "enabledDID": "启用DID外显号码",
     "ringbackOn": "是否开启彩铃",
     "ringbackTone": "回铃音",
@@ -1148,6 +1155,8 @@
     "Please drag and drop the file here or": "请拖拽文件到这里或点击上传",
     "Select File": "选择文件",
     "User upload hint": "仅支持 .xls 和 .xlsx 文件",
-    "importing": "导入中..."
+    "importing": "导入中...",
+    "selectAll": "全选",
+    "selectedCount": "已选择 {count}"
   }
 }

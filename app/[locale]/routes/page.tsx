@@ -12,6 +12,10 @@ import { ListFilterForm, ListTable, ListPagination } from "@/components/ui/list-
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { ImportDialog } from "@/components/ui/import-dialog";
 import { CreateRouteDialog } from "./components/create-route-dialog";
+import {
+  BatchSettingsDialog,
+  type BatchSettingsFormData,
+} from "./components/batch-settings-dialog";
 import { routesApi, Route, ListRoutesQuery, ContextItem } from "@/lib/api-client";
 import { createRouteColumns } from "./routes-columns";
 import { toast } from "sonner";
@@ -45,6 +49,9 @@ export default function RoutesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isBatchSettingsOpen, setIsBatchSettingsOpen] = useState(false);
+  const [selectedRoutes, setSelectedRoutes] = useState<any[]>([]);
+  const [isBatchSubmitting, setIsBatchSubmitting] = useState(false);
 
   const routeColumns = createRouteColumns({
     t: tt,
@@ -307,6 +314,34 @@ export default function RoutesPage() {
     }
   };
 
+  // 批量设置路由
+  const handleBatchSettings = useCallback(
+    async (data: BatchSettingsFormData) => {
+      setIsBatchSubmitting(true);
+      try {
+        const route = selectedRoutes.map((route) => route.id);
+        await routesApi.batchUpdate({
+          route,
+          ...data,
+        });
+        toast.success(tt("batchSettingsSuccess") || "批量设置成功");
+        await loadRoutes(currentPage, pageSize, filters);
+        setSelectedRoutes([]);
+      } catch (error) {
+        console.error("Failed to batch settings:", error);
+        toast.error(tt("batchSettingsFailed") || "批量设置失败");
+      } finally {
+        setIsBatchSubmitting(false);
+      }
+    },
+    [selectedRoutes, currentPage, pageSize, filters, loadRoutes, tt],
+  );
+
+  // 处理选择变化
+  const handleSelectionChange = useCallback((selected: Route[]) => {
+    setSelectedRoutes(selected);
+  }, []);
+
   return (
     <SidebarProvider
       style={
@@ -366,6 +401,9 @@ export default function RoutesPage() {
                         <UploadIcon className="mr-2 h-4 w-4" />
                         导入
                       </Button>
+                      <Button size="sm" onClick={() => setIsBatchSettingsOpen(true)}>
+                        批量设置
+                      </Button>
                     </div>
                     <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
                       <PlusIcon className="mr-2 h-4 w-4" />
@@ -379,6 +417,7 @@ export default function RoutesPage() {
                     data={routes}
                     isLoading={isLoading}
                     selection
+                    onSelectionChange={(selected) => handleSelectionChange(selected as Route[])}
                     emptyText={tt("noRoutes") || "暂无路由数据"}
                     loadingText={tt("loading") || "加载中..."}
                     translationPrefix="table"
@@ -432,6 +471,17 @@ export default function RoutesPage() {
         acceptDescription="仅支持.xls和.xlsx文件"
         onImport={handleImport}
         isLoading={isImporting}
+      />
+
+      {/* 批量设置弹窗 */}
+      <BatchSettingsDialog
+        open={isBatchSettingsOpen}
+        onOpenChange={setIsBatchSettingsOpen}
+        selectedRoutes={selectedRoutes}
+        allRoutes={routes}
+        onSelectionChange={handleSelectionChange}
+        onSubmit={handleBatchSettings}
+        isLoading={isBatchSubmitting}
       />
     </SidebarProvider>
   );

@@ -148,7 +148,7 @@ export function createRouteColumns({
                   router.push(`/routes/${row.original.id}`);
                 }}
               >
-                {tt("viewDetails")}
+                {tc("Details")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

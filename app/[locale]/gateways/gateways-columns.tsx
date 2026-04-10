@@ -209,7 +209,7 @@ export function createGatewaysColumns({
                 router.push(`/gateways/${row.original.id}`);
               }}
             >
-              {tc("viewDetails")}
+              {tc("Details")}
             </Button>
             {/* 注册/注销按钮 - 有用户名时显示 */}
             {gateway_status !== "UP" && gateway_state !== "NOREG" && (

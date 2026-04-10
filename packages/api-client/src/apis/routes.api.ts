@@ -49,6 +49,7 @@ export interface ListRoutesResponse {
 export type ListRoutesQuery = QueryParams & {
   page?: number;
   perPage?: number;
+  type?: string;
   name?: string; // 按名称筛选
   dest_type?: string; // 按目的地类型筛选
   disabled?: number; // 按状态筛选
@@ -169,6 +170,25 @@ export function createRoutesApi(client: ApiClient) {
       return client.request<CreateRouteResponse>({
         method: "PUT",
         path: `/api/routes/${id}`,
+        body: data,
+      });
+    },
+
+    /**
+     * 批量更新路由
+     */
+    batchUpdate(data: {
+      route: string[];
+      blacklist?: string;
+      media_codec?: string[];
+      auto_record?: string;
+      proxy_media?: string;
+      route_type?: string;
+      did_enabled?: string;
+    }) {
+      return client.request({
+        method: "PUT",
+        path: "/api/routes",
         body: data,
       });
     },

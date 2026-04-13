@@ -279,11 +279,15 @@ export function CdrTable({
                 row.original.hangup_cause === "NORMAL_CLEARING" ? "text-green-600" : "text-red-600"
               }
             >
-              {t(`${row.original.hangup_cause}`) || t(`${row.original.xui_hangup_cause}`) || "-"}
+              {(row.original.hangup_cause && t(`${row.original.hangup_cause}`)) ||
+                (row.original.xui_hangup_cause && t(`${row.original.xui_hangup_cause}`)) ||
+                "-"}
             </span>
             <br />
-            {row.original.hangup_cause !== "MANAGER_REQUEST" && (
-              <span>{t(`${row.original.sip_hangup_disposition}`) || "-"}</span>
+            {row.original.sip_hangup_disposition && (
+              <span>
+                {t(`${row.original.sip_hangup_disposition}`) || row.original.sip_hangup_disposition}
+              </span>
             )}
           </>
         ),

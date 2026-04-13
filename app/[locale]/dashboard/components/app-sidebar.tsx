@@ -83,89 +83,89 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: t("gateways"),
             url: "/gateways",
           },
-          // {
-          //   title: t("ivr"),
-          //   url: "/ivr",
-          // },
-          // {
-          //   title: t("blacklist"),
-          //   url: "/blacklist",
-          // },
-          // {
-          //   title: t("did"),
-          //   url: "/did",
-          // },
-          // {
-          //   title: t("dod"),
-          //   url: "/dod",
-          // },
+          {
+            title: t("ivr"),
+            url: "/ivr",
+          },
+          {
+            title: t("blacklist"),
+            url: "/blacklist",
+          },
+          {
+            title: t("did"),
+            url: "/did",
+          },
+          {
+            title: t("dod"),
+            url: "/dod",
+          },
           // {
           //   title: t("featureCodes"),
           //   url: "/feature-codes",
           // },
-          // {
-          //   title: t("timeRules"),
-          //   url: "/time-rules",
-          // },
-          // {
-          //   title: t("numberTransform"),
-          //   url: "/number-transform",
-          // },
+          {
+            title: t("timeRules"),
+            url: "/time-rules",
+          },
+          {
+            title: t("numberTransform"),
+            url: "/number-transform",
+          },
         ],
       },
-      // {
-      //   title: t("advanced"),
-      //   url: "/sip",
-      //   icon: <CogIcon />,
-      //   items: [
-      //     {
-      //       title: t("sip"),
-      //       url: "/sip",
-      //     },
-      //     {
-      //       title: t("license"),
-      //       url: "/license",
-      //     },
-      //     {
-      //       title: t("media"),
-      //       url: "/media",
-      //     },
-      //   ],
-      // },
-      // {
-      //   title: t("security"),
-      //   url: "/ip-blacklist",
-      //   icon: <ShieldIcon />,
-      //   items: [
-      //     {
-      //       title: t("ipBlacklist"),
-      //       url: "/ip-blacklist",
-      //     },
-      //     {
-      //       title: t("acl"),
-      //       url: "/acl",
-      //     },
-      //   ],
-      // },
-      // {
-      //   title: t("maintenance"),
-      //   url: "/logs",
-      //   icon: <WrenchIcon />,
-      //   items: [
-      //     {
-      //       title: t("logs"),
-      //       url: "/logs",
-      //     },
-      //     {
-      //       title: t("diagnostics"),
-      //       url: "/diagnostics",
-      //     },
-      //     {
-      //       title: t("backup"),
-      //       url: "/backup",
-      //     },
-      //   ],
-      // },
+      {
+        title: t("advanced"),
+        url: "/sip",
+        icon: <CogIcon />,
+        items: [
+          {
+            title: t("sip"),
+            url: "/sip",
+          },
+          {
+            title: t("license"),
+            url: "/license",
+          },
+          {
+            title: t("media"),
+            url: "/media",
+          },
+        ],
+      },
+      {
+        title: t("security"),
+        url: "/ip-blacklist",
+        icon: <ShieldIcon />,
+        items: [
+          {
+            title: t("ipBlacklist"),
+            url: "/ip-blacklist",
+          },
+          {
+            title: t("acl"),
+            url: "/acl",
+          },
+        ],
+      },
+      {
+        title: t("maintenance"),
+        url: "/logs",
+        icon: <WrenchIcon />,
+        items: [
+          {
+            title: t("logs"),
+            url: "/logs",
+          },
+          {
+            title: t("diagnostics"),
+            url: "/diagnostics",
+          },
+          {
+            title: t("backup"),
+            url: "/backup",
+          },
+        ],
+      },
     ],
     navSecondary: [
       // {

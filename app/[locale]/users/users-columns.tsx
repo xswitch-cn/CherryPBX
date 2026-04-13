@@ -87,7 +87,7 @@ export function createUserColumns({ t, tt, onDelete }: CreateUserColumnsProps): 
                   window.location.href = `/users/${user.id}`;
                 }}
               >
-                {tt("Details")}
+                {tt("details")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

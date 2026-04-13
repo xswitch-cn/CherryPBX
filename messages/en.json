@@ -119,7 +119,8 @@
     "submit": "Submit",
     "submitting": "Submitting...",
     "totalCount": "{total} records in total",
-    "clear": "Clear Filters"
+    "clear": "Clear Filters",
+    "details": "Details"
   },
   "users": {
     "addUser": "Add User",
@@ -888,7 +889,22 @@
     "Routes": "Routes",
     "Groups": "Groups",
     "Call UUID": "Call UUID",
-    "Caller Source": "Caller Source"
+    "Caller Source": "Caller Source",
+    "default(default)": "Default(default)",
+    "export": "Export",
+    "exportCdrOnly": "Export CDR Only",
+    "exportCdrOnlyWps": "Export CDR Only (WPS Compatible)",
+    "exportRecordingOnly": "Export Recording Only",
+    "exportCdrAndRecording": "Export CDR and Recording",
+    "exportCdrAndRecordingWps": "Export CDR and Recording (WPS Compatible)",
+    "selectAllPages": "Select All Pages",
+    "selectCurrentPage": "Select Current Page",
+    "clearAll": "Clear All",
+    "pleaseSelect": "Please Select",
+    "selectedItems": "Selected {count} Items",
+    "advancedSearch": "Advanced Search",
+    "collapseAdvancedSearch": "Collapse Advanced Search",
+    "downloadFailed": "Download Failed"
   },
   "ivr": {
     "addIvr": "Add IVR",

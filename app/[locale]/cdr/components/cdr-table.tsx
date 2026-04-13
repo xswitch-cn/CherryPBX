@@ -279,16 +279,22 @@ export function CdrTable({
                 row.original.hangup_cause === "NORMAL_CLEARING" ? "text-green-600" : "text-red-600"
               }
             >
-              {(row.original.hangup_cause && t(`${row.original.hangup_cause}`)) ||
-                (row.original.xui_hangup_cause && t(`${row.original.xui_hangup_cause}`)) ||
+              {(row.original.hangup_cause &&
+                row.original.hangup_cause.length > 0 &&
+                t(`${row.original.hangup_cause}`)) ||
+                (row.original.xui_hangup_cause &&
+                  row.original.xui_hangup_cause.length > 0 &&
+                  t(`${row.original.xui_hangup_cause}`)) ||
                 "-"}
             </span>
             <br />
-            {row.original.sip_hangup_disposition && (
-              <span>
-                {t(`${row.original.sip_hangup_disposition}`) || row.original.sip_hangup_disposition}
-              </span>
-            )}
+            {row.original.sip_hangup_disposition &&
+              row.original.sip_hangup_disposition.length > 0 && (
+                <span>
+                  {t(`${row.original.sip_hangup_disposition}`) ||
+                    row.original.sip_hangup_disposition}
+                </span>
+              )}
           </>
         ),
       },
@@ -330,7 +336,7 @@ export function CdrTable({
                   size="icon"
                 >
                   <EllipsisVerticalIcon />
-                  <span className="sr-only">{tt("viewDetails")}</span>
+                  <span className="sr-only">{tt("details")}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
@@ -340,7 +346,7 @@ export function CdrTable({
                     setDetailDialogOpen(true);
                   }}
                 >
-                  {t("viewDetails")}
+                  {tt("details")}
                 </DropdownMenuItem>
                 {hasMedia && (
                   <>
@@ -462,7 +468,7 @@ export function CdrTable({
             value: context.key,
             label: `${context.name}(${context.key})`,
           })),
-          { value: "default", label: "default(default)" },
+          { value: "default", label: t("default(default)") },
         ],
         width: "180px",
       },
@@ -673,7 +679,7 @@ export function CdrTable({
       })
       .catch((error) => {
         console.error("Failed to download CDRs:", error);
-        toast.error("下载话单失败");
+        toast.error(t("downloadFailed"));
       });
   };
 
@@ -720,7 +726,7 @@ export function CdrTable({
             onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
             className="mr-2"
           >
-            {showAdvancedSearch ? "收起高级搜索" : "高级搜索"}
+            {showAdvancedSearch ? t("collapseAdvancedSearch") : t("advancedSearch")}
           </Button>
         )}
       />
@@ -731,19 +737,19 @@ export function CdrTable({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                选择
+                {t("pleaseSelect")}
                 <ChevronDownIcon className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem onClick={() => handleBatchCheck("select", 0)}>
-                选择所有跨页
+                {t("selectAllPages")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBatchCheck("select", 1)}>
-                选择当前页
+                {t("selectCurrentPage")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBatchCheck("select", 2)}>
-                清除所有
+                {t("clearAll")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -756,55 +762,34 @@ export function CdrTable({
                 disabled={waitValue.length === 0 && selectedType !== 0}
               >
                 <DownloadIcon className="mr-2 h-4 w-4" />
-                导出
+                {t("export")}
                 <ChevronDownIcon className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={() => handleDownload(0)}>仅导出话单</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownload(3)}>
-                仅导出话单(WPS兼容)
+              <DropdownMenuItem onClick={() => handleDownload(0)}>
+                {t("exportCdrOnly")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownload(2)}>仅导出录音</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDownload(1)}>导出话单和录音</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownload(3)}>
+                {t("exportCdrOnlyWps")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownload(2)}>
+                {t("exportRecordingOnly")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownload(1)}>
+                {t("exportCdrAndRecording")}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDownload(4)}>
-                导出话单和录音(WPS兼容)
+                {t("exportCdrAndRecordingWps")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <div className="text-sm text-muted-foreground">
-            已选择 {selectedType === 0 ? rowCount : selectedType === 2 ? 0 : waitValue.length} 项
+            {t("selectedItems", {
+              count: selectedType === 0 ? rowCount : selectedType === 2 ? 0 : waitValue.length,
+            })}
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns3Icon className="mr-2 h-4 w-4" />
-                {tt("columns")}
-                <ChevronDownIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-32">
-              {table
-                .getAllColumns()
-                .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
 

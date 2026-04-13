@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @repo/api-client build && next dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "next dev",
     "build": "pnpm build:api-client && next build --webpack",
     "build:api-client": "pnpm --filter @repo/api-client build",
     "start": "pnpm build:api-client && next start",

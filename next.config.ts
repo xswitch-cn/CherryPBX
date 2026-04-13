@@ -3,6 +3,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  transpilePackages: ["@repo/api-client"],
   async rewrites() {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL_TARGET;
 

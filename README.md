@@ -120,3 +120,9 @@ Notes:
 ```bash
 make check
 ```
+
+## Links
+
+- [Wiki](https://github.com/xswitch-cn/CherryPBX/wiki)
+- [Github Discussions](https://github.com/rts-cn/rts/discussions/categories/cherrypbx)
+- [Feedback](https://docs.xswitch.cn/howto/feedback/)

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { licenseApi } from "@/lib/api-client";
 import { type License, type ListLicenseQuery } from "@repo/api-client";
 import { toast } from "sonner";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { createLicenseColumns } from "./license-columns";
 
 // 每页显示数量
@@ -31,6 +32,9 @@ export default function LicensePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   console.log(isCreateDialogOpen, "//....isCreateDialogOpen");
 
@@ -39,6 +43,10 @@ export default function LicensePage() {
     tl,
     tc,
     router,
+    onHandleDelete: (license: License) => {
+      setDeleteTarget(license);
+      setIsDeleteDialogOpen(true);
+    },
   });
 
   // 加载数据列表
@@ -95,6 +103,23 @@ export default function LicensePage() {
     [loadLicenses],
   );
 
+  // 删除数据
+  const handleDeleteGateway = useCallback(async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await licenseApi.delete(deleteTarget.id);
+      toast.success(tc("deleteSuccess") || "删除成功");
+      await loadLicenses(currentPage, pageSize);
+    } catch (error) {
+      console.error("Failed to delete license:", error);
+      toast.error(tc("deleteFailed") || "删除失败");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  }, [deleteTarget, currentPage, pageSize, loadLicenses, tc]);
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
@@ -129,6 +154,18 @@ export default function LicensePage() {
             onPageSizeChange={handlePageSizeChange}
             pageSizeOptions={PAGE_SIZE_OPTIONS}
             translationPrefix="table"
+          />
+
+          {/* 删除确认对话框 */}
+          <DeleteConfirmDialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            title={tl("deleteLicense")}
+            description={tc("DeleteItem", { item: deleteTarget?.name ? deleteTarget?.name : "" })}
+            onSubmit={handleDeleteGateway}
+            deleteText={tc("confirm") || "确定"}
+            cancelText={tc("cancel") || "取消"}
+            isLoading={isDeleting}
           />
         </div>
       </SidebarInset>

@@ -30,6 +30,7 @@ import {
   WrenchIcon,
 } from "lucide-react";
 import { useAuth } from "@/services/auth";
+import { title } from "process";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const t = useTranslations("sidebar");
@@ -61,11 +62,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/cdr",
         icon: <FileTextIcon />,
       },
-      // {
-      //   title: t("conference"),
-      //   url: "/conference",
-      //   icon: <UsersRoundIcon />,
-      // },
+      {
+        title: t("conference"),
+        url: "/conference",
+        icon: <UsersRoundIcon />,
+      },
       {
         title: t("callManagement"),
         url: "/routes",
@@ -82,6 +83,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {
             title: t("gateways"),
             url: "/gateways",
+          },
+          {
+            title: t("contexts"),
+            url: "/contexts",
           },
           {
             title: t("ivr"),

@@ -32,6 +32,7 @@ export { createDashboardApi } from "./apis/dashboard.api";
 export { createCdrsApi } from "./apis/cdrs.api";
 export { createMediaFilesApi } from "./apis/mediafiles.api";
 export { createConfigsApi } from "./apis/configs.api";
+export { createLicenseApi } from "./apis/license.api";
 
 export type { ListUsersQuery, ListUsersResponse, UsersApi } from "./apis/users.api";
 export type {
@@ -73,6 +74,8 @@ export type {
   CreateGatewayResponse,
   SiptItem,
 } from "./apis/gateways.api";
+
+export type { License, ListLicenseQuery } from "./apis/license.api";
 
 export type {
   LoginParams,

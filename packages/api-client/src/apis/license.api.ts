@@ -50,5 +50,15 @@ export function createLicenseApi(client: ApiClient) {
         query,
       });
     },
+
+    /**
+     * 删除License
+     */
+    delete(id: number) {
+      return client.request<{ success: boolean; message?: string }>({
+        method: "DELETE",
+        path: `/api/licenses/${encodeURIComponent(id)}`,
+      });
+    },
   };
 }

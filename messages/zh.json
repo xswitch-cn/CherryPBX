@@ -987,7 +987,8 @@
     "trial": "试用版",
     "addLicense": "添加许可证",
     "renewLicense": "续订许可证",
-    "daysRemaining": "剩余 {days} 天"
+    "daysRemaining": "剩余 {days} 天",
+    "deleteLicense": "删除License"
   },
   "media": {
     "addMedia": "添加媒体文件",

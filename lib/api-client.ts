@@ -7,6 +7,7 @@ import {
   createUsersApi,
   createLiveAuthApi,
   createConfigsApi,
+  createLicenseApi,
   type Route,
   type ListRoutesQuery,
   type ListRoutesResponse,
@@ -82,6 +83,7 @@ export const dodsApi = createDodsApi(apiClient);
 export const hotlinesApi = createHotlinesApi(apiClient);
 export const mediaFilesApi = createMediaFilesApi(apiClient);
 export const configsApi = createConfigsApi(apiClient);
+export const licenseApi = createLicenseApi(apiClient);
 
 // 导出常用类型
 export type {

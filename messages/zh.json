@@ -976,6 +976,8 @@
   },
   "license": {
     "licenseKey": "许可证密钥",
+    "name": "名称",
+    "description": "描述",
     "product": "产品",
     "expiryDate": "到期日期",
     "status": "状态",

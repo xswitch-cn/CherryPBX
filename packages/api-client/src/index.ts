@@ -33,6 +33,7 @@ export { createCdrsApi } from "./apis/cdrs.api";
 export { createMediaFilesApi } from "./apis/mediafiles.api";
 export { createConfigsApi } from "./apis/configs.api";
 export { createLicenseApi } from "./apis/license.api";
+export { createContextsApi } from "./apis/contexts.api";
 
 export type { ListUsersQuery, ListUsersResponse, UsersApi } from "./apis/users.api";
 export type {
@@ -89,6 +90,12 @@ export type { QueryParams, QueryValue, ApiEnvelope, ApiErrorBody } from "./types
 export type { User } from "./types/users";
 export type { Cdr } from "./types/cdrs";
 export type { Extension } from "./types/extensions";
+export type {
+  ListContextsQuery,
+  ListContextsResponse,
+  Context,
+  ContextsApi,
+} from "./apis/contexts.api";
 
 export { toQueryString } from "./utils/query";
 export { isBrowser, isNode, isWebWorker } from "./utils/env";

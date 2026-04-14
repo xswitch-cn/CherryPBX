@@ -8,6 +8,7 @@ import {
   createLiveAuthApi,
   createConfigsApi,
   createLicenseApi,
+  createContextsApi,
   type Route,
   type ListRoutesQuery,
   type ListRoutesResponse,
@@ -34,6 +35,9 @@ import {
   type ListMediaFilesQuery,
   type ListMediaFilesResponse,
   type CreateGatewayRequest,
+  type Context,
+  type ListContextsQuery,
+  type ListContextsResponse,
 } from "@repo/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 
@@ -84,6 +88,7 @@ export const hotlinesApi = createHotlinesApi(apiClient);
 export const mediaFilesApi = createMediaFilesApi(apiClient);
 export const configsApi = createConfigsApi(apiClient);
 export const licenseApi = createLicenseApi(apiClient);
+export const contextsApi = createContextsApi(apiClient);
 
 // 导出常用类型
 export type {
@@ -110,4 +115,7 @@ export type {
   ListDodsResponse,
   Hotline,
   CreateGatewayRequest,
+  Context,
+  ListContextsQuery,
+  ListContextsResponse,
 };

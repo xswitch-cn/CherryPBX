@@ -190,7 +190,7 @@ export default function ContextDetailPage() {
                       label={tt("description")}
                       name="description"
                       value={context.description || "-"}
-                      type="textarea"
+                      type="text"
                     />
 
                     <EditableField

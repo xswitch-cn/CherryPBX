@@ -88,7 +88,7 @@ export function createContextColumns({
                   window.location.href = `/contexts/${context.id}`;
                 }}
               >
-                {tt("Details")}
+                {t("Details")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

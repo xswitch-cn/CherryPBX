@@ -76,7 +76,7 @@ export type {
   SiptItem,
 } from "./apis/gateways.api";
 
-export type { License, ListLicenseQuery } from "./apis/license.api";
+export type { License, ListLicenseQuery, CreateLicenseRequest } from "./apis/license.api";
 
 export type {
   LoginParams,

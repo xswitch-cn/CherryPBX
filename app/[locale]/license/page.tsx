@@ -10,9 +10,10 @@ import { PlusIcon } from "lucide-react";
 import { ListTable, ListPagination } from "@/components/ui/list-components";
 import { Button } from "@/components/ui/button";
 import { licenseApi } from "@/lib/api-client";
-import { type License, type ListLicenseQuery } from "@repo/api-client";
+import { type License, type ListLicenseQuery, type CreateLicenseRequest } from "@repo/api-client";
 import { toast } from "sonner";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { CreateLicenseDialog } from "./components/create-license-dialog";
 import { createLicenseColumns } from "./license-columns";
 
 // 每页显示数量
@@ -35,8 +36,6 @@ export default function LicensePage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  console.log(isCreateDialogOpen, "//....isCreateDialogOpen");
 
   const licenseColumns = createLicenseColumns({
     t,
@@ -120,6 +119,22 @@ export default function LicensePage() {
     }
   }, [deleteTarget, currentPage, pageSize, loadLicenses, tc]);
 
+  const handleCreateLicense = useCallback(
+    async (_data: CreateLicenseRequest) => {
+      try {
+        await licenseApi.create(_data);
+        toast.success(tc("createSuccess"));
+        // 刷新列表（回到第一页）
+        await loadLicenses(1, pageSize);
+        setIsCreateDialogOpen(false);
+      } catch (error) {
+        console.error("Failed to create license:", error);
+        toast.error(tc("createFailed"));
+      }
+    },
+    [loadLicenses, pageSize, tc],
+  );
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
@@ -166,6 +181,13 @@ export default function LicensePage() {
             deleteText={tc("confirm") || "确定"}
             cancelText={tc("cancel") || "取消"}
             isLoading={isDeleting}
+          />
+
+          {/* 新增许可证 */}
+          <CreateLicenseDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            onSubmit={handleCreateLicense}
           />
         </div>
       </SidebarInset>

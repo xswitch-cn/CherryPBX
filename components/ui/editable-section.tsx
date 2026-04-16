@@ -58,7 +58,7 @@ interface EditableFieldProps {
   /** 字段标签 */
   label: string;
   /** 字段名（用于表单） */
-  name: string;
+  name?: string;
   /** 字段值（详情模式） */
   value?: ReactNode;
   /** 详情模式的占位符 */
@@ -129,7 +129,7 @@ export function EditableField({
 
   // 将字段名注册到渲染字段集合中
   React.useEffect(() => {
-    if (registerFieldName) {
+    if (name && registerFieldName) {
       registerFieldName.add(name);
     }
   }, [name, registerFieldName]);
@@ -155,7 +155,7 @@ export function EditableField({
         {required && <span className="text-destructive text-xs">*</span>}
         <span className="text-muted-foreground text-sm">{label}</span>
       </div>
-      {isEditing && form ? (
+      {isEditing && form && name ? (
         <FormField
           control={form.control}
           name={name}

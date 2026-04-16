@@ -1244,6 +1244,7 @@
     "importing": "导入中...",
     "selectAll": "全选",
     "selectedCount": "已选择 {count}",
-    "nameRequired": "名称必填"
+    "nameRequired": "名称必填",
+    "createdAt": "创建时间"
   }
 }

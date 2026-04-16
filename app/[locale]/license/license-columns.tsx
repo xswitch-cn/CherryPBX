@@ -60,7 +60,7 @@ export function createLicenseColumns({
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem
                 onClick={() => {
-                  router.push(`/routes/${row.original.id}`);
+                  router.push(`/license/${row.original.id}`);
                 }}
               >
                 {tc("Details")}

@@ -88,5 +88,26 @@ export function createLicenseApi(client: ApiClient) {
         path: `/api/licenses/${encodeURIComponent(id)}`,
       });
     },
+
+    /**
+     * 获取详情
+     */
+    getById(id: string) {
+      return client.request<License>({
+        method: "GET",
+        path: `/api/licenses/${id}`,
+      });
+    },
+
+    /**
+     * 编辑数据
+     */
+    update(id: string, data: License) {
+      return client.request<CreateLicenseResponse>({
+        method: "PUT",
+        path: `/api/licenses/${id}`,
+        body: data,
+      });
+    },
   };
 }

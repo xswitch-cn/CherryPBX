@@ -977,6 +977,7 @@
     "deletedSetting": "已删除设置：{name}"
   },
   "license": {
+    "createLicense": "创建许可证",
     "licenseKey": "许可证密钥",
     "name": "名称",
     "description": "描述",
@@ -1242,6 +1243,7 @@
     "User upload hint": "仅支持 .xls 和 .xlsx 文件",
     "importing": "导入中...",
     "selectAll": "全选",
-    "selectedCount": "已选择 {count}"
+    "selectedCount": "已选择 {count}",
+    "nameRequired": "名称必填"
   }
 }

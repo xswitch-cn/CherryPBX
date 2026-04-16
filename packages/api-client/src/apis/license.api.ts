@@ -36,6 +36,23 @@ export interface ListLicenseResponse {
 }
 
 /**
+ * 新建请求数据
+ */
+export interface CreateLicenseRequest {
+  name: string;
+  description?: string;
+}
+
+/**
+ * 创建响应
+ */
+export type CreateLicenseResponse = {
+  success: boolean;
+  data: License;
+  message?: string;
+};
+
+/**
  * License 相关 API 接口
  */
 export function createLicenseApi(client: ApiClient) {
@@ -48,6 +65,17 @@ export function createLicenseApi(client: ApiClient) {
         method: "GET",
         path: "/api/licenses",
         query,
+      });
+    },
+
+    /**
+     * 创建许可证
+     */
+    create(data: CreateLicenseRequest) {
+      return client.request<CreateLicenseResponse>({
+        method: "POST",
+        path: "/api/licenses",
+        body: data,
       });
     },
 

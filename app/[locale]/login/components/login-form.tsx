@@ -33,7 +33,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       .then((obj) => {
         if (obj.success) {
           localStorage.setItem("isLoggedIn", "true");
-          router.push("/dashboard");
+          router.push("/");
         } else {
           setError(obj.errorCode || t("loginFailed"));
         }

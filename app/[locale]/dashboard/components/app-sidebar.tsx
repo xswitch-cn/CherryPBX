@@ -44,7 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     navMain: [
       {
         title: t("dashboard"),
-        url: "/dashboard",
+        url: "/",
         icon: <LayoutDashboardIcon />,
       },
       {

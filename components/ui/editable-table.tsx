@@ -106,6 +106,8 @@ export interface EditableTableProps<TData> {
   switchCheckedValue?: string | number;
   /** Switch 未选中值 */
   switchUncheckedValue?: string | number;
+  /** 是否处于编辑模式 */
+  isEditing?: boolean;
 }
 
 /**
@@ -120,6 +122,7 @@ function EditableTableCell<TData extends Record<string, unknown>>({
   getRowId,
   switchCheckedValue,
   switchUncheckedValue,
+  isEditing,
 }: {
   row: TData;
   column: EditableTableColumn<TData>;
@@ -129,11 +132,24 @@ function EditableTableCell<TData extends Record<string, unknown>>({
   getRowId: (row: TData, index: number) => string;
   switchCheckedValue: string | number;
   switchUncheckedValue: string | number;
+  isEditing?: boolean;
 }) {
   const fieldName = column.key as string;
   const rowValue = row[column.key as keyof TData];
   const rowId = getRowId(row, rowIndex);
   const t = useTranslations("common");
+
+  // 文本输入类型的Hooks（始终调用，确保Hooks顺序一致）
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [editValue, setEditValue] = React.useState(String(rowValue ?? ""));
+  const [isCellEditing, setIsCellEditing] = React.useState(false);
+
+  // 当外部 rowValue 变化时，同步更新本地编辑值
+  React.useEffect(() => {
+    if (!isCellEditing) {
+      setEditValue(String(rowValue ?? ""));
+    }
+  }, [rowValue, isCellEditing]);
 
   // 操作列类型
   if (column.type === "action" && column.actions) {
@@ -176,7 +192,7 @@ function EditableTableCell<TData extends Record<string, unknown>>({
   // 自定义渲染
   if (column.render) {
     return (
-      <div className="flex items-center gap-1">
+      <div className={cn("flex items-center gap-1", isEditing && "bg-gray-100 rounded p-1")}>
         <span className="text-sm">{column.render(row)}</span>
         {column.showInfo && column.onInfoClick && (
           <button
@@ -205,7 +221,7 @@ function EditableTableCell<TData extends Record<string, unknown>>({
       isChecked = rowValue === true || rowValue === 1 || rowValue === "1" || rowValue === "yes";
     }
     return (
-      <div className="flex items-center gap-1">
+      <div className={cn("flex items-center gap-1", isEditing && "bg-gray-100 rounded p-1")}>
         <Switch
           checked={isChecked}
           onCheckedChange={(checked) => {
@@ -225,7 +241,7 @@ function EditableTableCell<TData extends Record<string, unknown>>({
   // Select 类型
   if (column.type === "select" && column.options) {
     return (
-      <div className="flex items-center gap-1">
+      <div className={cn("flex items-center gap-1", isEditing && "bg-gray-100 rounded p-1")}>
         <Select
           value={String(rowValue ?? "")}
           onValueChange={(value) => {
@@ -262,20 +278,9 @@ function EditableTableCell<TData extends Record<string, unknown>>({
 
   // 文本输入类型（text / number）
   if (column.type === "text" || column.type === "number") {
-    const inputRef = React.useRef<HTMLInputElement>(null);
-    const [editValue, setEditValue] = React.useState(String(rowValue ?? ""));
-    const [isEditing, setIsEditing] = React.useState(false);
-
-    // 当外部 rowValue 变化时，同步更新本地编辑值
-    React.useEffect(() => {
-      if (!isEditing) {
-        setEditValue(String(rowValue ?? ""));
-      }
-    }, [rowValue, isEditing]);
-
     // 点击文本进入编辑模式
     const handleClick = () => {
-      setIsEditing(true);
+      setIsCellEditing(true);
       setEditValue(String(rowValue ?? ""));
       // 下一帧聚焦输入框
       requestAnimationFrame(() => {
@@ -290,23 +295,28 @@ function EditableTableCell<TData extends Record<string, unknown>>({
       }
       if (e.key === "Escape") {
         setEditValue(String(rowValue ?? ""));
-        setIsEditing(false);
+        setIsCellEditing(false);
       }
     };
 
     const handleBlur = () => {
-      setIsEditing(false);
+      setIsCellEditing(false);
       const newValue = column.type === "number" ? Number(editValue) || 0 : editValue;
       // 只有值真正改变时才触发 onChange
       if (newValue !== rowValue) {
         const newRowData = { ...row, [fieldName]: newValue };
-        onChange?.({ rowId, key: fieldName, value: newValue, rowData: newRowData });
+        onChange?.({
+          rowId,
+          key: fieldName,
+          value: newValue,
+          rowData: newRowData,
+        });
       }
     };
 
-    if (isEditing) {
+    if (isCellEditing) {
       return (
-        <div className="flex items-center gap-1">
+        <div className={cn("flex items-center gap-1", isEditing && "bg-gray-100 rounded p-1")}>
           <input
             ref={inputRef}
             type={column.type}
@@ -335,14 +345,21 @@ function EditableTableCell<TData extends Record<string, unknown>>({
     }
 
     return (
-      <div className="flex items-center gap-1">
-        <span className="text-sm cursor-pointer hover:text-foreground" onClick={handleClick}>
-          {String(rowValue ?? "-")}
-        </span>
+      <div
+        className={cn(
+          "flex items-center gap-1 cursor-pointer",
+          isEditing && "bg-gray-100 rounded p-1",
+        )}
+        onClick={handleClick}
+      >
+        <span className="text-sm hover:text-foreground">{String(rowValue ?? "-")}</span>
         {column.showInfo && column.onInfoClick && (
           <button
             className="text-teal-500 hover:text-teal-600 text-sm shrink-0"
-            onClick={() => column.onInfoClick?.(row)}
+            onClick={(e) => {
+              e.stopPropagation();
+              column.onInfoClick?.(row);
+            }}
             type="button"
           >
             {t("details")}
@@ -354,7 +371,7 @@ function EditableTableCell<TData extends Record<string, unknown>>({
 
   // 默认显示
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn("flex items-center gap-2", isEditing && "bg-gray-100 rounded p-1")}>
       <span className="text-sm">{String(rowValue ?? "-")}</span>
       {column.showInfo && column.onInfoClick && (
         <button
@@ -406,6 +423,7 @@ export function EditableTable<TData extends Record<string, unknown>>({
   className,
   switchCheckedValue = "yes",
   switchUncheckedValue = "no",
+  isEditing = false,
 }: EditableTableProps<TData>) {
   const t = useTranslations("common");
 
@@ -466,10 +484,12 @@ export function EditableTable<TData extends Record<string, unknown>>({
       <Table>
         <TableHeader className="sticky top-0 z-10 bg-muted/50">
           <TableRow>
-            {columns.map((column) => (
+            {columns.map((column, index) => (
               <TableHead
                 key={String(column.key)}
-                style={column.width ? { width: column.width } : undefined}
+                style={
+                  column.width ? { width: column.width } : { width: `${100 / columns.length}%` }
+                }
               >
                 {column.header}
               </TableHead>
@@ -494,6 +514,7 @@ export function EditableTable<TData extends Record<string, unknown>>({
                       getRowId={getRowId}
                       switchCheckedValue={switchCheckedValue}
                       switchUncheckedValue={switchUncheckedValue}
+                      isEditing={isEditing}
                     />
                   </TableCell>
                 ))}

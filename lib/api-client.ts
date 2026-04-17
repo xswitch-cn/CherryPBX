@@ -9,6 +9,7 @@ import {
   createConfigsApi,
   createLicenseApi,
   createContextsApi,
+  createBlacklistsApi,
   type Route,
   type ListRoutesQuery,
   type ListRoutesResponse,
@@ -38,6 +39,10 @@ import {
   type Context,
   type ListContextsQuery,
   type ListContextsResponse,
+  type Blacklist,
+  type ListBlacklistsQuery,
+  type ListBlacklistsResponse,
+  type BlacklistsApi,
 } from "@repo/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 
@@ -89,6 +94,7 @@ export const mediaFilesApi = createMediaFilesApi(apiClient);
 export const configsApi = createConfigsApi(apiClient);
 export const licenseApi = createLicenseApi(apiClient);
 export const contextsApi = createContextsApi(apiClient);
+export const blacklistsApi = createBlacklistsApi(apiClient);
 
 // 导出常用类型
 export type {
@@ -118,4 +124,8 @@ export type {
   Context,
   ListContextsQuery,
   ListContextsResponse,
+  Blacklist,
+  ListBlacklistsQuery,
+  ListBlacklistsResponse,
+  BlacklistsApi,
 };

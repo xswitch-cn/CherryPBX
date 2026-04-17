@@ -34,6 +34,7 @@ export { createMediaFilesApi } from "./apis/mediafiles.api";
 export { createConfigsApi } from "./apis/configs.api";
 export { createLicenseApi } from "./apis/license.api";
 export { createContextsApi } from "./apis/contexts.api";
+export { createBlacklistsApi } from "./apis/blacklists.api";
 
 export type { ListUsersQuery, ListUsersResponse, UsersApi } from "./apis/users.api";
 export type {
@@ -96,6 +97,13 @@ export type {
   Context,
   ContextsApi,
 } from "./apis/contexts.api";
+
+export type {
+  Blacklist,
+  ListBlacklistsQuery,
+  ListBlacklistsResponse,
+  BlacklistsApi,
+} from "./apis/blacklists.api";
 
 export { toQueryString } from "./utils/query";
 export { isBrowser, isNode, isWebWorker } from "./utils/env";

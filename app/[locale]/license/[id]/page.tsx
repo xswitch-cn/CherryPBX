@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback, useEffect, useMemo } from "react";
+import { use, useState, useCallback, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
@@ -10,6 +10,8 @@ import { type License } from "@repo/api-client";
 import { licenseApi } from "@/lib/api-client";
 import { toast } from "sonner";
 import { EditableSection, EditableField } from "@/components/ui/editable-section";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "lucide-react";
 
 interface LicenseDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -25,6 +27,8 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
 
   const [license, setLicense] = useState<License | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  console.log(isAddDialogOpen, "//....isAddDialogOpen");
 
   const loadLicenseDetail = useCallback(async () => {
     try {
@@ -109,6 +113,13 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
             />
             <EditableField label={tc("createdAt")} value={license?.created_at} />
           </EditableSection>
+          <div className="flex items-center justify-between">
+            <div />
+            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+              <PlusIcon className="mr-2 h-4 w-4" />
+              {tc("add")}
+            </Button>
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

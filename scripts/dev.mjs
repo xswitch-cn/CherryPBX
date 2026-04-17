@@ -10,6 +10,7 @@ function startProcess(name, args) {
   const child = spawn(pnpmCommand, args, {
     stdio: "inherit",
     env: process.env,
+    shell: true,
   });
 
   child.on("exit", (code, signal) => {

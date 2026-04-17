@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,12 +34,21 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, EyeIcon, EyeOffIcon } from "lucide-react";
 
 // 字段类型定义
-export type FieldType = "text" | "number" | "select" | "date" | "textarea" | "email" | "password";
+export type FieldType =
+  | "text"
+  | "number"
+  | "select"
+  | "date"
+  | "textarea"
+  | "email"
+  | "password"
+  | "radio";
 
 // 单个字段的配置
 export interface FieldConfig {
@@ -51,6 +60,8 @@ export interface FieldConfig {
   defaultValue?: any;
   // select 类型的选项
   options?: Array<{ value: string; label: string }>;
+  // radio 类型的选项
+  radioOptions?: Array<{ value: string; label: string }>;
   // 验证规则
   validation?: {
     min?: number;
@@ -80,6 +91,8 @@ export interface FieldConfig {
   value?: any;
   // 表单字段变更处理函数（由 react-hook-form 提供）
   onChange?: (value: any) => void;
+  // 密码字段是否显示切换按钮
+  showPasswordToggle?: boolean;
 }
 
 // 表单配置
@@ -390,20 +403,83 @@ const FormFieldRenderer = ({
           <FormField
             control={form.control}
             name={field.name}
+            render={({ field: formField }) => {
+              const [showPassword, setShowPassword] = useState(false);
+              return (
+                <FormItem>
+                  <FormLabel>
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                    {field.label}
+                  </FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...formField}
+                        value={formField.value ?? ""}
+                        placeholder={field.placeholder}
+                        disabled={field.disabled}
+                        type={showPassword ? "text" : "password"}
+                      />
+                      {field.showPasswordToggle && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOffIcon className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <EyeIcon className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </FormControl>
+                  {field.description && <FormDescription>{field.description}</FormDescription>}
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+        );
+
+      case "radio":
+        return (
+          <FormField
+            control={form.control}
+            name={field.name}
             render={({ field: formField }) => (
               <FormItem>
                 <FormLabel>
-                  {field.label}
                   {field.required && <span className="text-destructive ml-1">*</span>}
+                  {field.label}
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    {...formField}
-                    value={formField.value ?? ""}
-                    placeholder={field.placeholder}
+                  <RadioGroup
+                    value={formField.value}
+                    onValueChange={(value) => {
+                      formField.onChange(value);
+                      if (field.onChange) {
+                        field.onChange(value);
+                      }
+                    }}
                     disabled={field.disabled}
-                    type="password"
-                  />
+                    className="flex items-center gap-6"
+                  >
+                    {field.radioOptions?.map((option) => (
+                      <div key={option.value} className="flex items-center gap-2">
+                        <RadioGroupItem value={option.value} id={`${field.name}-${option.value}`} />
+                        <label
+                          htmlFor={`${field.name}-${option.value}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </RadioGroup>
                 </FormControl>
                 {field.description && <FormDescription>{field.description}</FormDescription>}
                 <FormMessage />

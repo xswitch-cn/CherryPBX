@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { DashboardContent } from "@/app/[locale]/dashboard/components/dashboard-content";
 
 export default function LocaleRootPage() {
-  redirect("/dashboard");
+  return <DashboardContent />;
 }

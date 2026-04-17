@@ -1011,7 +1011,20 @@
     "Application Server": "申请服务器地址",
     "Edit Server": "修改服务器",
     "License Management": "License客户管理",
-    "License Info": "License信息"
+    "License Info": "License信息",
+    "Audio": "音频",
+    "Video": "视频",
+    "XCC": "XCC",
+    "TTS": "TTS",
+    "ASR": "ASR",
+    "H323": "H323",
+    "Tencent TTS": "腾讯TTS",
+    "Tencent ASR": "腾讯ASR",
+    "MiniMax TTS": "MiniMax TTS",
+    "MiniMax V2 TTS": "MiniMax V2 TTS",
+    "Volcengine TTS": "火山引擎TTS",
+    "Created Successfully": "创建成功",
+    "Create Failed": "创建失败"
   },
   "media": {
     "addMedia": "添加媒体文件",
@@ -1268,6 +1281,7 @@
     "createdAt": "创建时间",
     "Audio": "音频",
     "Video": "视频",
-    "select": "选择"
+    "select": "选择",
+    "selectDate": "选择日期"
   }
 }

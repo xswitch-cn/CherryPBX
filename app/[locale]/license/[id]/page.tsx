@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback, useEffect } from "react";
+import { use, useState, useCallback, useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { EditableSection, EditableField } from "@/components/ui/editable-section";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
+import { AddLicenseModuleDialog } from "../components/add-license-module-dialog";
 
 interface LicenseDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -28,7 +29,6 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
   const [license, setLicense] = useState<License | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  console.log(isAddDialogOpen, "//....isAddDialogOpen");
 
   const loadLicenseDetail = useCallback(async () => {
     try {
@@ -73,6 +73,10 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
       toast.error(tc("saveFailed"));
       return false;
     }
+  };
+
+  const handleAddSuccess = () => {
+    void loadLicenseDetail();
   };
 
   return (
@@ -120,6 +124,13 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
               {tc("add")}
             </Button>
           </div>
+
+          <AddLicenseModuleDialog
+            open={isAddDialogOpen}
+            onOpenChange={setIsAddDialogOpen}
+            licenseId={licenseId}
+            onSuccess={handleAddSuccess}
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>

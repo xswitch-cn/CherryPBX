@@ -984,7 +984,19 @@
     "searchDod": "Search DOD...",
     "noDod": "No DOD found.",
     "editingDod": "Editing DOD: {number}",
-    "deletedDod": "Deleted DOD: {number}"
+    "deletedDod": "Deleted DOD: {number}",
+    "lineNumber": "Line Number",
+    "lineNumberPlaceholder": "Enter line number",
+    "extension": "Extension",
+    "selectExtension": "Select extension",
+    "resourceType": "Resource Type",
+    "selectResourceType": "Select resource type",
+    "gateway": "Gateway",
+    "trunk": "Trunk",
+    "distributor": "Distributor",
+    "selectResource": "Select resource",
+    "deleteDod": "Delete DOD",
+    "deleteItem": "Are you sure you want to delete {item}?"
   },
   "featureCodes": {
     "addCode": "Add Feature Code",
@@ -1372,7 +1384,9 @@
     "Cannot input Chinese": "Cannot Input Chinese",
     "importing": "Importing...",
     "selectAll": "Select All",
-    "selectedCount": "Selected {count}"
+    "selectedCount": "Selected {count}",
+    "import":"Import",
+    "export":"Export"
   },
   "gateways": {
     "createGateway": "Create Gateway",

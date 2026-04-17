@@ -934,7 +934,20 @@
     "searchDod": "搜索DOD...",
     "noDod": "未找到DOD。",
     "editingDod": "正在编辑DOD：{number}",
-    "deletedDod": "已删除DOD：{number}"
+    "deletedDod": "已删除DOD：{number}",
+    "lineNumber": "线路号码",
+    "extension": "分机",
+    "resourceType": "资源类型",
+    "resourceName": "资源名",
+    "lineNumberPlaceholder": "请输入线路号码",
+    "selectExtension": "请选择分机",
+    "selectResourceType": "请选择资源类型",
+    "gateway": "网关",
+    "trunk": "中继",
+    "distributor": "分配器",
+    "selectResource": "请选择资源",
+    "deleteDod": "删除DOD",
+    "deleteItem": "确认删除项 {item} 吗？"
   },
   "featureCodes": {
     "addCode": "添加功能码",
@@ -1350,6 +1363,8 @@
     "Audio": "音频",
     "Video": "视频",
     "select": "选择",
-    "selectDate": "选择日期"
+    "selectDate": "选择日期",
+    "import":"导入",
+    "export":"导出"
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -223,11 +223,16 @@ const FormFieldRenderer = ({
             render={({ field: formField }) => (
               <FormItem>
                 <FormLabel>
-                  {field.label}
                   {field.required && <span className="text-destructive ml-1">*</span>}
+                  {field.label}
                 </FormLabel>
                 <Select
-                  onValueChange={formField.onChange}
+                  onValueChange={(value) => {
+                    formField.onChange(value);
+                    if (field.onChange) {
+                      field.onChange(value);
+                    }
+                  }}
                   value={formField.value}
                   disabled={field.disabled}
                 >
@@ -259,8 +264,8 @@ const FormFieldRenderer = ({
             render={({ field: formField }) => (
               <FormItem>
                 <FormLabel>
-                  {field.label}
                   {field.required && <span className="text-destructive ml-1">*</span>}
+                  {field.label}
                 </FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -308,13 +313,14 @@ const FormFieldRenderer = ({
             render={({ field: formField }) => (
               <FormItem>
                 <FormLabel>
-                  {field.label}
                   {field.required && <span className="text-destructive ml-1">*</span>}
+                  {field.label}
                 </FormLabel>
                 <FormControl>
                   <Textarea
                     placeholder={field.placeholder}
                     {...formField}
+                    value={formField.value ?? ""}
                     disabled={field.disabled}
                   />
                 </FormControl>
@@ -333,14 +339,15 @@ const FormFieldRenderer = ({
             render={({ field: formField }) => (
               <FormItem>
                 <FormLabel>
-                  {field.label}
                   {field.required && <span className="text-destructive ml-1">*</span>}
+                  {field.label}
                 </FormLabel>
                 <FormControl>
                   <Input
                     placeholder={field.placeholder}
                     disabled={field.disabled}
                     {...formField}
+                    value={formField.value ?? ""}
                     type="number"
                   />
                 </FormControl>
@@ -365,6 +372,7 @@ const FormFieldRenderer = ({
                 <FormControl>
                   <Input
                     {...formField}
+                    value={formField.value ?? ""}
                     placeholder={field.placeholder}
                     disabled={field.disabled}
                     type="email"
@@ -391,6 +399,7 @@ const FormFieldRenderer = ({
                 <FormControl>
                   <Input
                     {...formField}
+                    value={formField.value ?? ""}
                     placeholder={field.placeholder}
                     disabled={field.disabled}
                     type="password"
@@ -408,24 +417,28 @@ const FormFieldRenderer = ({
           <FormField
             control={form.control}
             name={field.name}
-            render={({ field: formField }) => (
-              <FormItem>
-                <FormLabel>
-                  {field.label}
-                  {field.required && <span className="text-destructive ml-1">*</span>}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...formField}
-                    placeholder={field.placeholder}
-                    disabled={field.disabled}
-                    type="text"
-                  />
-                </FormControl>
-                {field.description && <FormDescription>{field.description}</FormDescription>}
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field: formField }) => {
+              const safeValue = formField.value ?? (field.type === "number" ? undefined : "");
+              return (
+                <FormItem>
+                  <FormLabel>
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                    {field.label}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...formField}
+                      value={safeValue}
+                      placeholder={field.placeholder}
+                      disabled={field.disabled}
+                      type="text"
+                    />
+                  </FormControl>
+                  {field.description && <FormDescription>{field.description}</FormDescription>}
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         );
     }
@@ -474,6 +487,28 @@ export function DynamicFormDialog({
     resolver: zodResolver(schema as z.ZodType<any, any, any>),
     defaultValues,
   });
+
+  // 当 schema 变化时重置表单（用于动态添加/删除字段的场景）
+  useEffect(() => {
+    const currentValues = form.getValues();
+    const newDefaultValues: Record<string, any> = {};
+
+    config.fields.forEach((field) => {
+      // 如果字段已经有值，保留它
+      if (currentValues[field.name] !== undefined && currentValues[field.name] !== "") {
+        newDefaultValues[field.name] = currentValues[field.name];
+      } else if (field.defaultValue !== undefined) {
+        // 否则使用字段的 defaultValue
+        newDefaultValues[field.name] = field.defaultValue;
+      } else if (field.type === "date") {
+        newDefaultValues[field.name] = undefined;
+      } else {
+        newDefaultValues[field.name] = "";
+      }
+    });
+
+    form.reset(newDefaultValues);
+  }, [schema]);
 
   // 当对话框打开状态改变时重置表单
   const handleOpenChange = (newOpen: boolean) => {
@@ -525,7 +560,7 @@ export function DynamicFormDialog({
                 {cancelText || tc("cancel")}
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? tc("submitting") : submitText || tc("submit")}
+                {submitText || tc("submit")}
               </Button>
             </DialogFooter>
           </form>

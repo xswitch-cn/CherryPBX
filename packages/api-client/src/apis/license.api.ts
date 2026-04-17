@@ -109,5 +109,16 @@ export function createLicenseApi(client: ApiClient) {
         body: data,
       });
     },
+
+    /**
+     * 添加许可证模块
+     */
+    addLicenseModule(licenseId: string, data: Record<string, any>) {
+      return client.request<{ success: boolean; data?: any; message?: string }>({
+        method: "POST",
+        path: `/api/licenses/${licenseId}`,
+        body: data,
+      });
+    },
   };
 }

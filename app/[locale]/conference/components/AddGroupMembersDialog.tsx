@@ -9,15 +9,18 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { conferencesApi } from "@/lib/api-client";
 
 export function AddGroupMembersDialog({
   open,
   onOpenChange,
   roomId,
+  onMembersAdded,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   roomId: number;
+  onMembersAdded?: () => void;
 }) {
   const [groups, setGroups] = useState<any[]>([]);
   const [groupUsers, setGroupUsers] = useState<any[]>([]);
@@ -32,14 +35,21 @@ export function AddGroupMembersDialog({
   // 加载组列表
   const loadGroups = useCallback(() => {
     setIsLoading(true);
-    fetch("/api/groups/user_group")
-      .then((response) => response.json())
-      .then((data) => {
-        setGroups(data.data || []);
+    conferencesApi
+      .getGroups()
+      .then((response) => {
+        if (Array.isArray(response.data)) {
+          setGroups(response.data);
+        } else if (response.data && Array.isArray(response.data)) {
+          setGroups(response.data);
+        } else {
+          setGroups([]);
+        }
       })
       .catch((error) => {
         console.error("Failed to load groups:", error);
         toast.error("获取组列表失败");
+        setGroups([]);
       })
       .finally(() => {
         setIsLoading(false);
@@ -65,16 +75,25 @@ export function AddGroupMembersDialog({
       setGroupId(selectedGroupId);
 
       if (selectedGroupId && roomId) {
-        fetch(`/api/conference_rooms/${roomId}/remain_members/${selectedGroupId}`)
-          .then((response) => response.json())
-          .then((data) => {
-            setGroupUsers(data || []);
+        conferencesApi
+          .getGroupMembers(roomId, selectedGroupId)
+          .then((response) => {
+            // 确保groupUsers是一个数组
+            if (Array.isArray(response.data)) {
+              setGroupUsers(response.data);
+            } else if (response.data && Array.isArray(response.data)) {
+              // 处理嵌套的数据结构
+              setGroupUsers(response.data);
+            } else {
+              setGroupUsers([]);
+            }
             setSelectedUsers([]);
             setActiveTab("members");
           })
           .catch((error) => {
             console.error("Failed to load group users:", error);
             toast.error("获取组成员失败");
+            setGroupUsers([]);
           });
       }
     },
@@ -111,13 +130,8 @@ export function AddGroupMembersDialog({
       };
     });
 
-    fetch(`/api/conference_rooms/${roomId}/members`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(postMembers),
-    })
+    conferencesApi
+      .addMembers(roomId, postMembers)
       .then(() => {
         setActiveTab("groups");
         setGroupId(-1);
@@ -125,12 +139,16 @@ export function AddGroupMembersDialog({
         setGroupUsers([]);
         onOpenChange(false);
         toast.success("添加成功");
+        // 调用回调函数，通知父组件刷新与会者列表
+        if (onMembersAdded) {
+          onMembersAdded();
+        }
       })
       .catch((error) => {
         console.error("Failed to add group members:", error);
         toast.error("添加失败");
       });
-  }, [roomId, groupUsers, selectedUsers, route, groupId, onOpenChange]);
+  }, [roomId, groupUsers, selectedUsers, route, groupId, onOpenChange, onMembersAdded]);
 
   if (!open) return null;
 

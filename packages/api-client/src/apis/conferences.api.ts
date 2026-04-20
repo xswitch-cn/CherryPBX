@@ -23,6 +23,9 @@ export type Conference = {
   video_mode?: string;
   profile_id?: string;
   call_permission?: string;
+  call_perm?: string;
+  pin?: string;
+  admin_pin?: string;
   agora_appid?: string;
   agora_token?: string;
   agora_channel?: string;
@@ -70,6 +73,15 @@ export interface ConferencesApi {
   getCallPermissions(): ReturnType<ApiClient["request"]>;
   getUsers(): ReturnType<ApiClient["request"]>;
   getMediaFiles(id: number | string): ReturnType<ApiClient["request"]>;
+  getGroups(): ReturnType<ApiClient["request"]>;
+  getGroupMembers(
+    roomId: number | string,
+    groupId: number | string,
+  ): ReturnType<ApiClient["request"]>;
+  addMembers(roomId: number | string, data: any): ReturnType<ApiClient["request"]>;
+  addGroupMembers(roomId: number | string, data: any): ReturnType<ApiClient["request"]>;
+  addMedia(roomId: number | string, data: any): ReturnType<ApiClient["request"]>;
+  getMediaFilesList(types: string): ReturnType<ApiClient["request"]>;
 }
 
 export function createConferencesApi(client: ApiClient): ConferencesApi {
@@ -151,6 +163,52 @@ export function createConferencesApi(client: ApiClient): ConferencesApi {
       return client.request<MediaFile[]>({
         method: "GET",
         path: `/api/conference_rooms/${id}/media_files`,
+      });
+    },
+
+    getGroups() {
+      return client.request({
+        method: "GET",
+        path: "/api/groups/user_group",
+      });
+    },
+
+    getGroupMembers(roomId: number | string, groupId: number | string) {
+      return client.request({
+        method: "GET",
+        path: `/api/conference_rooms/${roomId}/remain_members/${groupId}`,
+      });
+    },
+
+    addMembers(roomId: number | string, data: any) {
+      return client.request({
+        method: "POST",
+        path: `/api/conference_rooms/${roomId}/members`,
+        body: data,
+      });
+    },
+
+    addGroupMembers(roomId: number | string, data: any) {
+      return client.request({
+        method: "POST",
+        path: `/api/conference_rooms/${roomId}/members`,
+        body: data,
+      });
+    },
+
+    addMedia(roomId: number | string, data: any) {
+      return client.request({
+        method: "POST",
+        path: `/api/conference_rooms/${roomId}/medias`,
+        body: data,
+      });
+    },
+
+    getMediaFilesList(types: string) {
+      return client.request({
+        method: "GET",
+        path: `/api/media_files`,
+        query: { types },
       });
     },
   };

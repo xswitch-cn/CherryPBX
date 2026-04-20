@@ -10,6 +10,7 @@ import {
   createLicenseApi,
   createContextsApi,
   createBlacklistsApi,
+  createConferencesApi,
   type Route,
   type ListRoutesQuery,
   type ListRoutesResponse,
@@ -43,6 +44,12 @@ import {
   type ListBlacklistsQuery,
   type ListBlacklistsResponse,
   type BlacklistsApi,
+  type Conference,
+  type ListConferencesQuery,
+  type ListConferencesResponse,
+  type ConferencesApi,
+  type ConferenceProfile,
+  type UserItem,
 } from "@repo/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 
@@ -95,6 +102,7 @@ export const configsApi = createConfigsApi(apiClient);
 export const licenseApi = createLicenseApi(apiClient);
 export const contextsApi = createContextsApi(apiClient);
 export const blacklistsApi = createBlacklistsApi(apiClient);
+export const conferencesApi = createConferencesApi(apiClient);
 
 // 导出常用类型
 export type {
@@ -128,4 +136,10 @@ export type {
   ListBlacklistsQuery,
   ListBlacklistsResponse,
   BlacklistsApi,
+  Conference,
+  ListConferencesQuery,
+  ListConferencesResponse,
+  ConferencesApi,
+  ConferenceProfile,
+  UserItem,
 };

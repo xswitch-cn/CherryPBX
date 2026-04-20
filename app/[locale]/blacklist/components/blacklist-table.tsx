@@ -1,8 +1,6 @@
 import React from "react";
 import { useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { DynamicFormDialog, FormConfig } from "@/components/dynamic-form-dialog";
 import {
   Dialog,
   DialogContent,
@@ -12,34 +10,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { type Blacklist } from "../blacklist-columns";
 
-// 创建Blacklist的表单数据类型
-const createBlacklistSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().optional(),
-  listType: z.string().min(1),
-  userType: z.string().min(1),
-});
-
-export type CreateBlacklistFormData = z.infer<typeof createBlacklistSchema>;
+export type CreateBlacklistFormData = {
+  name: string;
+  description?: string;
+  listType: string;
+  userType: string;
+};
 
 // 创建Blacklist的对话框
 export function CreateBlacklistDialog({
@@ -54,143 +33,58 @@ export function CreateBlacklistDialog({
   const tt = useTranslations("blacklist");
   const ttt = useTranslations("table");
 
-  const form = useForm<CreateBlacklistFormData>({
-    resolver: zodResolver(createBlacklistSchema) as any,
-    defaultValues: {
-      name: "",
-      description: "",
-      listType: "",
-      userType: "",
-    },
-  });
-
-  const handleSubmit = async (data: CreateBlacklistFormData) => {
-    try {
-      await onSubmit(data);
-      form.reset();
-      onOpenChange(false);
-    } catch {
-      // 错误在父组件处理
-    }
+  // 定义表单配置
+  const formConfig: FormConfig = {
+    fields: [
+      {
+        name: "name",
+        label: tt("name"),
+        type: "text",
+        placeholder: tt("name"),
+        required: true,
+      },
+      {
+        name: "description",
+        label: tt("description"),
+        type: "text",
+        placeholder: tt("description"),
+        required: false,
+      },
+      {
+        name: "listType",
+        label: tt("listType"),
+        type: "select",
+        required: true,
+        options: [
+          { value: "0", label: tt("blacklist") },
+          { value: "1", label: tt("whitelist") },
+        ],
+      },
+      {
+        name: "userType",
+        label: tt("userType"),
+        type: "select",
+        required: true,
+        options: [
+          { value: "0", label: tt("caller") },
+          { value: "1", label: tt("called") },
+          { value: "2", label: tt("callerAndCalled") },
+        ],
+      },
+    ],
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{tt("createBlacklist")}</DialogTitle>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void form.handleSubmit(handleSubmit)(e);
-            }}
-          >
-            <div className="grid gap-4 py-4">
-              {/* 名称 */}
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                    <FormLabel className="col-span-4 text-right">
-                      <span className="text-destructive mr-1">*</span>
-                      {tt("name")}
-                    </FormLabel>
-                    <FormControl className="col-span-8">
-                      <Input {...field} placeholder={tt("name")} />
-                    </FormControl>
-                    <FormMessage className="col-span-8 col-start-5" />
-                  </FormItem>
-                )}
-              />
-
-              {/* 描述 */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                    <FormLabel className="col-span-4 text-right">{tt("description")}</FormLabel>
-                    <FormControl className="col-span-8">
-                      <Input {...field} placeholder={tt("description")} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {/* 名单类型 */}
-              <FormField
-                control={form.control}
-                name="listType"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                    <FormLabel className="col-span-4 text-right">
-                      <span className="text-destructive mr-1">*</span>
-                      {tt("listType")}
-                    </FormLabel>
-                    <FormControl className="col-span-8">
-                      <div className="w-full">
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder={tt("listType")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">{tt("blacklist")}</SelectItem>
-                            <SelectItem value="1">{tt("whitelist")}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </FormControl>
-                    <FormMessage className="col-span-8 col-start-5" />
-                  </FormItem>
-                )}
-              />
-
-              {/* 限制用户类型 */}
-              <FormField
-                control={form.control}
-                name="userType"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                    <FormLabel className="col-span-4 text-right">
-                      <span className="text-destructive mr-1">*</span>
-                      {tt("userType")}
-                    </FormLabel>
-                    <FormControl className="col-span-8">
-                      <div className="w-full">
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder={tt("userType")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">{tt("caller")}</SelectItem>
-                            <SelectItem value="1">{tt("called")}</SelectItem>
-                            <SelectItem value="2">{tt("callerAndCalled")}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </FormControl>
-                    <FormMessage className="col-span-8 col-start-5" />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {tt("close")}
-              </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {tt("submit")}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <DynamicFormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={tt("createBlacklist")}
+      config={formConfig}
+      onSubmit={onSubmit}
+      submitText={tt("submit")}
+      cancelText={tt("close")}
+      contentClassName="sm:max-w-[500px]"
+    />
   );
 }
 

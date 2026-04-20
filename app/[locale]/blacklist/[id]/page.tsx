@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DynamicFormDialog, FormConfig } from "@/components/dynamic-form-dialog";
 
 // 模拟号码列表数据
 const mockNumberData: BlacklistNumber[] = [];
@@ -56,7 +57,6 @@ export default function BlacklistDetailPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [newNumber, setNewNumber] = useState<{ k: string; v: string }>({ k: "", v: "" });
   const [importFiles, setImportFiles] = useState<File[]>([]);
   const [isTableEditing, setIsTableEditing] = useState(false);
 
@@ -129,29 +129,32 @@ export default function BlacklistDetailPage() {
   );
 
   // 处理添加号码
-  const handleAddNumber = useCallback(async () => {
-    if (!blacklist || !newNumber.k) return;
+  const handleAddNumber = useCallback(
+    async (data: { k: string; v: string }) => {
+      if (!blacklist || !data.k) return;
 
-    try {
-      const response = (await blacklistsApi.addNumber(blacklist.id, newNumber)) as any;
-      const data = response.data;
-      if (data.code === 200) {
-        const newNumberWithId = {
-          ...newNumber,
-          id: data.data,
-        };
-        setNumbers((prev) => [...prev, newNumberWithId]);
-        setNewNumber({ k: "", v: "" });
-        setIsAddModalOpen(false);
-        toast.success(tt("addSuccess"));
-      } else {
-        toast.error(`${tt("addFailed")}: ${data.message || data.text || data}`);
+      try {
+        const response = (await blacklistsApi.addNumber(blacklist.id, data)) as any;
+        const responseData = response.data;
+        if (responseData.code === 200) {
+          const newNumberWithId = {
+            ...data,
+            id: responseData.data,
+          };
+          setNumbers((prev) => [...prev, newNumberWithId]);
+          toast.success(tt("addSuccess"));
+        } else {
+          toast.error(
+            `${tt("addFailed")}: ${responseData.message || responseData.text || responseData}`,
+          );
+        }
+      } catch (error) {
+        console.error("Failed to add number:", error);
+        toast.error(tt("addFailed"));
       }
-    } catch (error) {
-      console.error("Failed to add number:", error);
-      toast.error(tt("addFailed"));
-    }
-  }, [blacklist, newNumber, tt]);
+    },
+    [blacklist, tt],
+  );
 
   // 处理删除号码
   const handleDeleteNumber = useCallback(
@@ -562,51 +565,33 @@ export default function BlacklistDetailPage() {
       </SidebarInset>
 
       {/* 添加号码模态框 */}
-      {isAddModalOpen && (
-        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>{tt("addBlacklistNumber")}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              {/* 名称 */}
-              <div className="grid grid-cols-12 items-center gap-x-4">
-                <Label className="col-span-4 text-right">
-                  <span className="text-destructive mr-1">*</span>
-                  {tt("name")}
-                </Label>
-                <div className="col-span-8">
-                  <Input
-                    value={newNumber.k}
-                    onChange={(e) => setNewNumber({ ...newNumber, k: e.target.value })}
-                    placeholder={tt("name")}
-                  />
-                </div>
-              </div>
-              {/* 号码前缀 */}
-              <div className="grid grid-cols-12 items-center gap-x-4">
-                <Label className="col-span-4 text-right">
-                  <span className="text-destructive mr-1">*</span>
-                  {tt("numberPrefix")}
-                </Label>
-                <div className="col-span-8">
-                  <Input
-                    value={newNumber.v}
-                    onChange={(e) => setNewNumber({ ...newNumber, v: e.target.value })}
-                    placeholder={tt("numberPrefix")}
-                  />
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
-                {tt("close")}
-              </Button>
-              <Button onClick={() => void handleAddNumber()}>{tt("submit")}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      <DynamicFormDialog
+        open={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        title={tt("addBlacklistNumber")}
+        config={{
+          fields: [
+            {
+              name: "k",
+              label: tt("name"),
+              type: "text",
+              placeholder: tt("name"),
+              required: true,
+            },
+            {
+              name: "v",
+              label: tt("numberPrefix"),
+              type: "text",
+              placeholder: tt("numberPrefix"),
+              required: true,
+            },
+          ],
+        }}
+        onSubmit={handleAddNumber}
+        submitText={tt("submit")}
+        cancelText={tt("close")}
+        contentClassName="sm:max-w-[500px]"
+      />
 
       {/* 导入号码模态框 */}
       <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>

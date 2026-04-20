@@ -129,7 +129,8 @@
     "fileFormatHint": "仅支持.xls和.xlsx文件",
     "submitImport": "提交",
     "closeImport": "关闭",
-    "deleteFile": "删除"
+    "deleteFile": "删除",
+    "loading": "加载中..."
   },
   "users": {
     "addUser": "添加用户",
@@ -980,19 +981,28 @@
     "deletedRule": "已删除规则：{name}"
   },
   "conference": {
-    "addRoom": "添加会议室",
-    "roomName": "会议室名称",
-    "roomNumber": "会议室号码",
-    "pin": "PIN码",
-    "maxParticipants": "最大参与人数",
-    "status": "状态",
-    "active": "启用",
-    "inactive": "停用",
-    "currentParticipants": "当前参与人数",
-    "searchRooms": "搜索会议室...",
-    "noRooms": "未找到会议室。",
-    "editingRoom": "正在编辑会议室：{name}",
-    "deletedRoom": "已删除会议室：{name}"
+    "addConference": "添加会议室",
+    "newConference": "新建会议室",
+    "conference": "会议室",
+    "id": "ID",
+    "name": "名称",
+    "description": "描述",
+    "number": "号码",
+    "domain": "域",
+    "capacity": "容量",
+    "actions": "操作",
+    "control": "控制",
+    "quickDeleteMode": "快速删除模式",
+    "noConferences": "未找到会议室。",
+    "loadFailed": "加载失败",
+    "addSuccess": "添加成功",
+    "addFailed": "添加失败",
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败",
+    "deleteConference": "删除会议室",
+    "areYouSureDelete": "确定删除会议室 {name} 吗？",
+    "close": "关闭",
+    "details": "详情"
   },
   "sip": {
     "addSip": "添加SIP设置",

@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { type Conference } from "@/lib/api-client";
 import { EditableSection, EditableField } from "@/components/ui/editable-section";
 import { conferencesApi } from "@/lib/api-client";
+import { DynamicFormDialog, FormConfig } from "@/components/dynamic-form-dialog";
+import { AddGroupMembersDialog } from "../components/AddGroupMembersDialog";
 
 export default function ConferenceDetailPage() {
   const router = useRouter();
@@ -37,6 +39,8 @@ export default function ConferenceDetailPage() {
   const [callPermissions, setCallPermissions] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [mediaFiles, setMediaFiles] = useState<any[]>([]);
+  const [isAddParticipantOpen, setIsAddParticipantOpen] = useState(false);
+  const [isAddGroupMembersOpen, setIsAddGroupMembersOpen] = useState(false);
 
   // 加载conference详情
   const loadConferenceDetail = useCallback(async () => {
@@ -109,12 +113,12 @@ export default function ConferenceDetailPage() {
           id: conference.id,
           name: formData.name,
           description: formData.description,
-          number: formData.number,
-          domain: formData.domain,
+          nbr: formData.nbr,
+          realm: formData.realm,
           capacity: formData.capacity || "10",
           canvas_count: formData.canvasCount || "1",
           video_mode: formData.videoMode,
-          template: formData.template,
+          profile_id: formData.profile_id,
           fps: formData.videoFrameRate || "15",
           bandwidth: formData.bandwidth || "1mb",
           call_permission: formData.callPermission,
@@ -124,7 +128,6 @@ export default function ConferenceDetailPage() {
           subtitle_color: formData.subtitleColor,
           password: formData.password,
           admin_password: formData.adminPassword,
-          enable_agora: formData.enableAgora,
           auto_mute: formData.autoMute,
           stream_address: formData.streamAddress,
           banner: JSON.stringify(videoBanner),
@@ -170,8 +173,8 @@ export default function ConferenceDetailPage() {
           ...conference,
           name: formData.name,
           description: formData.description,
-          number: formData.number,
-          domain: formData.domain,
+          nbr: formData.number,
+          realm: formData.realm,
           capacity: formData.capacity,
           banner: videoBanner,
           enable_agora: formData.enableAgora,
@@ -195,6 +198,19 @@ export default function ConferenceDetailPage() {
   const handleBack = useCallback(() => {
     router.push("/conference");
   }, [router]);
+
+  // 处理添加与会者
+  const handleAddParticipant = useCallback(async (data: any) => {
+    try {
+      // 这里可以添加添加与会者的API调用
+      console.log("Adding participant:", data);
+      toast.success("添加成功");
+    } catch (error) {
+      console.error("Failed to add participant:", error);
+      toast.error("添加失败");
+      throw error;
+    }
+  }, []);
 
   // 初始化
   useEffect(() => {
@@ -269,18 +285,17 @@ export default function ConferenceDetailPage() {
                       ...conference,
                       manager: "",
                       canvasCount: 1,
-                      videoMode: "融屏",
-                      template: "[example]conference profile",
-                      videoFrameRate: 15,
+                      videoMode: conference.video_mode || "CONF_VIDEO_MODE_PASSTHROUGH",
+                      profile_id: conference.profile_id || "",
+                      videoFrameRate: "15",
                       bandwidth: "1mb",
-                      callPermission: "",
+                      callPermission: conference.call_permission || "",
                       subtitleSize: 2,
                       subtitle: "",
                       backgroundColor: "black",
                       subtitleColor: "",
                       password: "",
                       adminPassword: "",
-                      enableAgora: false,
                       autoMute: false,
                       streamAddress: "",
                     }}
@@ -302,8 +317,8 @@ export default function ConferenceDetailPage() {
                     />
                     <EditableField
                       label={tt("number")}
-                      name="number"
-                      value={conference.number}
+                      name="nbr"
+                      value={conference.nbr}
                       type="text"
                       required
                     />
@@ -315,29 +330,46 @@ export default function ConferenceDetailPage() {
                     />
                     <EditableField label="管理员" name="manager" value="-" type="text" />
                     <EditableField label="画布个数" name="canvasCount" value={1} type="number" />
-                    <EditableField label="视频模式" name="videoMode" value="融屏" type="text" />
                     <EditableField
-                      label={tt("domain")}
-                      name="domain"
-                      value={conference.domain}
+                      label="视频模式"
+                      name="videoMode"
+                      value={conference.video_mode || "CONF_VIDEO_MODE_PASSTHROUGH"}
+                      type="select"
+                      options={videoModes.map((mode) => ({
+                        value: mode.k,
+                        label: mode.v,
+                      }))}
+                    />
+                    <EditableField
+                      label={tt("realm")}
+                      name="realm"
+                      value={conference.realm}
                       type="text"
                     />
                     <EditableField
                       label="会议模板"
-                      name="template"
-                      value="[example]conference profile"
-                      type="text"
+                      name="profile_id"
+                      value={conference.profile_id || ""}
+                      type="select"
+                      options={profiles.map((profile) => ({
+                        value: profile.id.toString(),
+                        label: `[${profile.name}] ${profile.description || ""}`,
+                      }))}
                       required
                     />
-                    <EditableField
-                      label="视频帧率"
-                      name="videoFrameRate"
-                      value={15}
-                      type="number"
-                    />
+                    <EditableField label="视频帧率" name="videoFrameRate" value="15" type="text" />
                     <EditableField label="带宽" name="bandwidth" value="1mb" type="text" />
-                    <EditableField label="呼叫权限" name="callPermission" value="-" type="text" />
-                    <EditableField label="字幕大小" name="subtitleSize" value={2} type="number" />
+                    <EditableField
+                      label="呼叫权限"
+                      name="callPermission"
+                      value={conference.call_permission || ""}
+                      type="select"
+                      options={callPermissions.map((perm) => ({
+                        value: perm.k,
+                        label: tt(perm.k) || perm.v,
+                      }))}
+                    />
+                    <EditableField label="字幕大小" name="subtitleSize" value={2} type="text" />
                     <EditableField label="字幕" name="subtitle" value="-" type="text" />
                     <EditableField
                       label="背景颜色"
@@ -352,14 +384,6 @@ export default function ConferenceDetailPage() {
                       name="adminPassword"
                       value="-"
                       type="password"
-                    />
-                    <EditableField
-                      label="启用声网"
-                      name="enableAgora"
-                      value={false}
-                      type="switch"
-                      // switchCheckedValue={tt("yes")}
-                      switchUncheckedValue={tt("no")}
                     />
                     <EditableField
                       label="自动禁言"
@@ -380,8 +404,12 @@ export default function ConferenceDetailPage() {
                         <Button size="sm" variant="outline">
                           编辑
                         </Button>
-                        <Button size="sm">添加与会者</Button>
-                        <Button size="sm">添加组成员</Button>
+                        <Button size="sm" onClick={() => setIsAddParticipantOpen(true)}>
+                          添加与会者
+                        </Button>
+                        <Button size="sm" onClick={() => setIsAddGroupMembersOpen(true)}>
+                          添加组成员
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -434,6 +462,49 @@ export default function ConferenceDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* 添加与会者弹窗 */}
+        <DynamicFormDialog
+          open={isAddParticipantOpen}
+          onOpenChange={setIsAddParticipantOpen}
+          title="添加与会者"
+          config={{
+            fields: [
+              {
+                name: "name",
+                label: "名称",
+                type: "text",
+                placeholder: "",
+                required: true,
+              },
+              {
+                name: "description",
+                label: "描述",
+                type: "text",
+                placeholder: "",
+                required: false,
+              },
+              {
+                name: "number",
+                label: "号码",
+                type: "text",
+                placeholder: "",
+                required: true,
+              },
+            ],
+          }}
+          onSubmit={handleAddParticipant}
+          submitText="提交"
+          cancelText="关闭"
+          contentClassName="sm:max-w-[500px]"
+        />
+
+        {/* 添加组成员弹窗 */}
+        <AddGroupMembersDialog
+          open={isAddGroupMembersOpen}
+          onOpenChange={setIsAddGroupMembersOpen}
+          roomId={conference?.id || 0}
+        />
       </SidebarInset>
     </SidebarProvider>
   );

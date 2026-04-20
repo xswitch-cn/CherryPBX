@@ -989,6 +989,7 @@
     "description": "描述",
     "number": "号码",
     "domain": "域",
+    "realm": "域",
     "capacity": "容量",
     "actions": "操作",
     "control": "控制",
@@ -1002,7 +1003,10 @@
     "deleteConference": "删除会议室",
     "areYouSureDelete": "确定删除会议室 {name} 吗？",
     "close": "关闭",
-    "details": "详情"
+    "details": "详情",
+    "CONF_CP_AUTH_USER": "只允许认证用户呼入",
+    "CONF_CP_CHECK_CID": "检查主叫号码",
+    "CONF_CP_NO_CHECK": "允许任何人呼入"
   },
   "sip": {
     "addSip": "添加SIP设置",

@@ -61,8 +61,8 @@ export default function ConferencePage() {
           id: item.id,
           name: item.name,
           description: item.description,
-          number: item.number,
-          domain: item.domain,
+          nbr: item.nbr,
+          realm: item.realm,
           capacity: item.capacity,
         }));
 
@@ -91,7 +91,7 @@ export default function ConferencePage() {
 
   // 创建会议室
   const handleCreate = useCallback(
-    async (data: CreateConferenceFormData) => {
+    async (data: any) => {
       try {
         await conferencesApi.create(data);
         toast.success(tt("addSuccess"));

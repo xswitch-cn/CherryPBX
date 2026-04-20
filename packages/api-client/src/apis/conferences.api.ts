@@ -10,8 +10,8 @@ export type Conference = {
   id: number;
   name: string;
   description: string;
-  number: string;
-  domain: string;
+  nbr: string;
+  realm: string;
   capacity: number;
   banner?: any;
   enable_agora?: boolean;
@@ -20,6 +20,12 @@ export type Conference = {
   fps?: string;
   cluster?: any;
   moderator?: number;
+  video_mode?: string;
+  profile_id?: string;
+  call_permission?: string;
+  agora_appid?: string;
+  agora_token?: string;
+  agora_channel?: string;
 };
 
 export type ConferenceProfile = {

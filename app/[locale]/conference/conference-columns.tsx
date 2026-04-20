@@ -40,14 +40,14 @@ export function createConferenceColumns({
       cell: ({ row }) => row.getValue("description"),
     },
     {
-      accessorKey: "number",
+      accessorKey: "nbr",
       header: t("number"),
-      cell: ({ row }) => row.getValue("number"),
+      cell: ({ row }) => row.getValue("nbr"),
     },
     {
-      accessorKey: "domain",
-      header: t("domain"),
-      cell: ({ row }) => row.getValue("domain"),
+      accessorKey: "realm",
+      header: t("realm"),
+      cell: ({ row }) => row.getValue("realm"),
     },
     {
       accessorKey: "capacity",

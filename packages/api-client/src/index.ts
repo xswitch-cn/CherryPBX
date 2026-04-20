@@ -35,8 +35,17 @@ export { createConfigsApi } from "./apis/configs.api";
 export { createLicenseApi } from "./apis/license.api";
 export { createContextsApi } from "./apis/contexts.api";
 export { createBlacklistsApi } from "./apis/blacklists.api";
+export { createConferencesApi } from "./apis/conferences.api";
 
 export type { ListUsersQuery, ListUsersResponse, UsersApi } from "./apis/users.api";
+export type {
+  ListConferencesQuery,
+  ListConferencesResponse,
+  Conference,
+  ConferencesApi,
+  ConferenceProfile,
+  UserItem,
+} from "./apis/conferences.api";
 export type {
   Route,
   CreateRouteRequest,

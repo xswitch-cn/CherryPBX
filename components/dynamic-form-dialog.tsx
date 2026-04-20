@@ -594,12 +594,17 @@ export function DynamicFormDialog({
     onOpenChange(newOpen);
   };
 
-  const handleSubmit = (values: any) => {
-    const result = onSubmit(values);
-    if (result instanceof Promise) {
-      result.catch((error: unknown) => {
-        console.error("Form submission error:", error);
-      });
+  const handleSubmit = async (values: any) => {
+    try {
+      const result = onSubmit(values);
+      if (result instanceof Promise) {
+        await result;
+      }
+      // Close the dialog after successful submission
+      handleOpenChange(false);
+    } catch (error) {
+      console.error("Form submission error:", error);
+      // Don't close the dialog if there's an error
     }
   };
 

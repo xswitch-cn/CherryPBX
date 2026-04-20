@@ -1,359 +1,348 @@
-"use client";
-
-import * as React from "react";
+import React from "react";
 import { useTranslations } from "next-intl";
-import {
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  useReactTable,
-  type ColumnDef,
-  type VisibilityState,
-} from "@tanstack/react-table";
-import { toast } from "sonner";
-import { z } from "zod";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+import { DynamicFormDialog, FormConfig } from "@/components/dynamic-form-dialog";
 import { Label } from "@/components/ui/label";
+import { type Conference } from "@/lib/api-client";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Columns3Icon,
-  ChevronDownIcon,
-  PlusIcon,
-  ChevronsLeftIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsRightIcon,
-  EllipsisVerticalIcon,
-  SearchIcon,
-  UsersRoundIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
-export const conferenceSchema = z.object({
-  id: z.number(),
-  roomName: z.string(),
-  roomNumber: z.string(),
-  pin: z.string(),
-  maxParticipants: z.number(),
-  status: z.string(),
-  currentParticipants: z.number(),
-});
+export type CreateConferenceFormData = {
+  name: string;
+  description?: string;
+  number: string;
+  template: string;
+};
 
-export function ConferenceTable({
-  data: initialData,
+// 创建Conference的对话框
+export function CreateConferenceDialog({
+  open,
+  onOpenChange,
+  onSubmit,
 }: {
-  data: z.infer<typeof conferenceSchema>[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: CreateConferenceFormData) => Promise<void>;
 }) {
-  const t = useTranslations("conference");
-  const tt = useTranslations("table");
-  const [data] = React.useState(() => initialData);
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [globalFilter, setGlobalFilter] = React.useState("");
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
+  const tt = useTranslations("conference");
+  const tc = useTranslations("common");
 
-  const columns = React.useMemo<ColumnDef<z.infer<typeof conferenceSchema>>[]>(
-    () => [
+  // 定义表单配置
+  const formConfig: FormConfig = {
+    fields: [
       {
-        id: "select",
-        header: ({ table }) => (
-          <div className="flex items-center justify-center">
-            <Checkbox
-              checked={
-                table.getIsAllPageRowsSelected() ||
-                (table.getIsSomePageRowsSelected() && "indeterminate")
-              }
-              onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
-            />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="flex items-center justify-center">
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(v) => row.toggleSelected(!!v)}
-            />
-          </div>
-        ),
-        enableSorting: false,
-        enableHiding: false,
+        name: "name",
+        label: tt("name"),
+        type: "text",
+        placeholder: "",
+        required: true,
       },
       {
-        accessorKey: "roomName",
-        header: t("roomName"),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900">
-              <UsersRoundIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <span className="font-medium">{row.original.roomName}</span>
-          </div>
-        ),
+        name: "description",
+        label: tt("description"),
+        type: "text",
+        placeholder: "",
+        required: false,
       },
       {
-        accessorKey: "roomNumber",
-        header: t("roomNumber"),
-        cell: ({ row }) => (
-          <Badge variant="outline" className="font-mono">
-            {row.original.roomNumber}
-          </Badge>
-        ),
+        name: "number",
+        label: tt("number"),
+        type: "text",
+        placeholder: "",
+        required: true,
       },
       {
-        accessorKey: "pin",
-        header: t("pin"),
-        cell: ({ row }) => (
-          <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{row.original.pin}</code>
-        ),
-      },
-      { accessorKey: "maxParticipants", header: t("maxParticipants") },
-      {
-        accessorKey: "currentParticipants",
-        header: t("currentParticipants"),
-        cell: ({ row }) => (
-          <Badge variant={row.original.currentParticipants > 0 ? "default" : "secondary"}>
-            {row.original.currentParticipants}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: "status",
-        header: t("status"),
-        cell: ({ row }) =>
-          row.original.status === "Active" ? (
-            <div className="flex items-center gap-1.5">
-              <CheckCircleIcon className="h-4 w-4 text-green-500" />
-              <span className="text-green-600">{t("active")}</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <XCircleIcon className="h-4 w-4 text-red-500" />
-              <span className="text-red-600">{t("inactive")}</span>
-            </div>
-          ),
-      },
-      {
-        id: "actions",
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex size-8 text-muted-foreground" size="icon">
-                <EllipsisVerticalIcon />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => toast.info(t("editingRoom", { name: row.original.roomName }))}
-              >
-                {tt("edit")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => toast.error(t("deletedRoom", { name: row.original.roomName }))}
-              >
-                {tt("delete")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
+        name: "template",
+        label: "模板",
+        type: "select",
+        required: true,
+        options: [
+          {
+            value: "[default]conference profile",
+            label: "[default]conference profile",
+          },
+        ],
+        defaultValue: "[default]conference profile",
       },
     ],
-    [t, tt],
-  );
-
-  const table = useReactTable({
-    data,
-    columns,
-    state: { columnVisibility, rowSelection, pagination, globalFilter },
-    getRowId: (row) => row.id.toString(),
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
-    onGlobalFilterChange: setGlobalFilter,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
+  };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="relative">
-          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("searchRooms")}
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="h-9 w-64 pl-8"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns3Icon className="mr-2 h-4 w-4" />
-                {tt("columns")}
-                <ChevronDownIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((c) => c.getCanHide())
-                .map((c) => (
-                  <DropdownMenuCheckboxItem
-                    key={c.id}
-                    checked={c.getIsVisible()}
-                    onCheckedChange={(v) => c.toggleVisibility(!!v)}
-                  >
-                    {c.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button size="sm" onClick={() => toast.success(t("addRoom"))}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            {t("addRoom")}
+    <DynamicFormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={tt("newConference")}
+      config={formConfig}
+      onSubmit={onSubmit}
+      submitText={tc("submit")}
+      cancelText={tc("close")}
+      contentClassName="sm:max-w-[500px]"
+    />
+  );
+}
+
+// 查看Conference详情的对话框
+export function ViewConferenceDialog({
+  open,
+  onOpenChange,
+  conference,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  conference: Conference | null;
+}) {
+  const tt = useTranslations("conference");
+  const t = useTranslations("common");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[800px]">
+        <DialogHeader className="flex items-center justify-between">
+          <DialogTitle>
+            {tt("conference")} {tt("details")}
+          </DialogTitle>
+          <Button variant="outline" size="sm">
+            编辑
           </Button>
+        </DialogHeader>
+        <div className="py-6">
+          {conference && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 名称 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">
+                  <span className="text-destructive mr-1">*</span>
+                  {tt("name")}
+                </Label>
+                <div className="col-span-8">
+                  <span>{conference.name}</span>
+                </div>
+              </div>
+
+              {/* 描述 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">{tt("description")}</Label>
+                <div className="col-span-8">
+                  <span>{conference.description || tt("no")}</span>
+                </div>
+              </div>
+
+              {/* 号码 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">
+                  <span className="text-destructive mr-1">*</span>
+                  {tt("number")}
+                </Label>
+                <div className="col-span-8">
+                  <span>{conference.number}</span>
+                </div>
+              </div>
+
+              {/* 容量 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">{tt("capacity")}</Label>
+                <div className="col-span-8">
+                  <span>{conference.capacity}</span>
+                </div>
+              </div>
+
+              {/* 管理员 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">管理员</Label>
+                <div className="col-span-8">
+                  <span>-</span>
+                </div>
+              </div>
+
+              {/* 画布个数 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">画布个数</Label>
+                <div className="col-span-8">
+                  <span>1</span>
+                </div>
+              </div>
+
+              {/* 视频模式 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">视频模式</Label>
+                <div className="col-span-8">
+                  <span>融屏</span>
+                </div>
+              </div>
+
+              {/* 域 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">{tt("domain")}</Label>
+                <div className="col-span-8">
+                  <span>{conference.domain}</span>
+                </div>
+              </div>
+
+              {/* 会议模板 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">
+                  <span className="text-destructive mr-1">*</span>
+                  会议模板
+                </Label>
+                <div className="col-span-8">
+                  <span>[example]conference profile</span>
+                </div>
+              </div>
+
+              {/* 视频帧率 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">视频帧率</Label>
+                <div className="col-span-8">
+                  <span>15</span>
+                </div>
+              </div>
+
+              {/* 带宽 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">带宽</Label>
+                <div className="col-span-8">
+                  <span>1mb</span>
+                </div>
+              </div>
+
+              {/* 呼叫权限 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">呼叫权限</Label>
+                <div className="col-span-8">
+                  <span>-</span>
+                </div>
+              </div>
+
+              {/* 字幕大小 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">字幕大小</Label>
+                <div className="col-span-8">
+                  <span>2</span>
+                </div>
+              </div>
+
+              {/* 字幕 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">字幕</Label>
+                <div className="col-span-8">
+                  <span>-</span>
+                </div>
+              </div>
+
+              {/* 背景颜色 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">背景颜色</Label>
+                <div className="col-span-8">
+                  <div className="w-8 h-4 bg-black rounded"></div>
+                </div>
+              </div>
+
+              {/* 字幕颜色 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">字幕颜色</Label>
+                <div className="col-span-8">
+                  <span>-</span>
+                </div>
+              </div>
+
+              {/* 密码 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">密码</Label>
+                <div className="col-span-8">
+                  <span>-</span>
+                </div>
+              </div>
+
+              {/* 管理员密码 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">管理员密码</Label>
+                <div className="col-span-8">
+                  <span>-</span>
+                </div>
+              </div>
+
+              {/* 启用声网 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">启用声网</Label>
+                <div className="col-span-8">
+                  <span>否</span>
+                </div>
+              </div>
+
+              {/* 自动禁言 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">自动禁言</Label>
+                <div className="col-span-8">
+                  <span>否</span>
+                </div>
+              </div>
+
+              {/* 推流地址 */}
+              <div className="grid grid-cols-12 items-center gap-x-4">
+                <Label className="col-span-4 text-right font-medium">推流地址</Label>
+                <div className="col-span-8">
+                  <span>-</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-      <div className="overflow-hidden rounded-lg border">
-        <Table>
-          <TableHeader className="sticky top-0 z-10 bg-muted">
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((h) => (
-                  <TableHead key={h.id}>
-                    {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  {t("noRooms")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-between px-4">
-        <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-          {tt("selectedRows", {
-            selected: table.getFilteredSelectedRowModel().rows.length,
-            total: table.getFilteredRowModel().rows.length,
-          })}
-        </div>
-        <div className="flex w-full items-center gap-8 lg:w-fit">
-          <div className="hidden items-center gap-2 lg:flex">
-            <Label className="text-sm font-medium">{tt("rowsPerPage")}</Label>
-            <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(v) => table.setPageSize(Number(v))}
-            >
-              <SelectTrigger size="sm" className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent side="top">
-                <SelectGroup>
-                  {[10, 20, 30, 40, 50].map((ps) => (
-                    <SelectItem key={ps} value={`${ps}`}>
-                      {ps}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex w-fit items-center justify-center text-sm font-medium">
-            {tt("pageOf", {
-              current: table.getState().pagination.pageIndex + 1,
-              total: table.getPageCount(),
-            })}
-          </div>
-          <div className="ml-auto flex items-center gap-2 lg:ml-0">
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronsLeftIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="size-8"
-              size="icon"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="size-8"
-              size="icon"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRightIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="hidden size-8 lg:flex"
-              size="icon"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronsRightIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
+        <DialogFooter className="justify-end">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="px-6">
+            {tt("close")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// 删除Conference的对话框
+export function DeleteConferenceDialog({
+  open,
+  onOpenChange,
+  conference,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  conference: Conference | null;
+  onSubmit: (id: number) => Promise<void>;
+}) {
+  const tt = useTranslations("conference");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>{tt("deleteConference")}</DialogTitle>
+          <DialogDescription>
+            {tt("areYouSureDelete", { name: conference?.name || "" })}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {tt("cancel")}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => {
+              if (conference) {
+                void onSubmit(conference.id);
+              }
+            }}
+          >
+            {tt("delete")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

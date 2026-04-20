@@ -1031,19 +1031,6 @@
     "deletedRule": "Deleted rule: {name}"
   },
   "conference": {
-    "addRoom": "Add Conference Room",
-    "roomName": "Room Name",
-    "roomNumber": "Room Number",
-    "pin": "PIN",
-    "maxParticipants": "Max Participants",
-    "status": "Status",
-    "active": "Active",
-    "inactive": "Inactive",
-    "currentParticipants": "Current Participants",
-    "searchRooms": "Search conference rooms...",
-    "noRooms": "No conference rooms found.",
-    "editingRoom": "Editing room: {name}",
-    "deletedRoom": "Deleted room: {name}",
     "addConference": "Add Conference",
     "newConference": "New Conference",
     "conference": "Conference",
@@ -1052,6 +1039,7 @@
     "description": "Description",
     "number": "Number",
     "domain": "Domain",
+    "realm": "Realm",
     "capacity": "Capacity",
     "actions": "Actions",
     "control": "Control",
@@ -1065,7 +1053,10 @@
     "deleteConference": "Delete Conference",
     "areYouSureDelete": "Are you sure you want to delete conference {name}?",
     "close": "Close",
-    "details": "Details"
+    "details": "Details",
+    "CONF_CP_AUTH_USER": "Only authenticated users can call in",
+    "CONF_CP_CHECK_CID": "Check caller ID",
+    "CONF_CP_NO_CHECK": "Allow anyone to call in"
   },
   "sip": {
     "addSip": "Add SIP Setting",

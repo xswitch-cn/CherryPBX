@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { DynamicFormDialog, FormConfig } from "@/components/dynamic-form-dialog";
 import { Label } from "@/components/ui/label";
-import { type Conference } from "@/lib/api-client";
+import { type Conference, type ConferenceProfile, conferencesApi } from "@/lib/api-client";
 import {
   Dialog,
   DialogContent,
@@ -16,8 +16,13 @@ import { Button } from "@/components/ui/button";
 export type CreateConferenceFormData = {
   name: string;
   description?: string;
-  number: string;
-  template: string;
+  nbr: string;
+  profile_id: string;
+  canvas_count?: string;
+  capacity?: string;
+  bandwidth?: string;
+  fps?: string;
+  video_mode?: string;
 };
 
 // 创建Conference的对话框
@@ -32,6 +37,36 @@ export function CreateConferenceDialog({
 }) {
   const tt = useTranslations("conference");
   const tc = useTranslations("common");
+  const [profiles, setProfiles] = useState<ConferenceProfile[]>([]);
+  const [forceDomain, setForceDomain] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 加载会议配置文件和强制域
+  useEffect(() => {
+    if (open) {
+      const fetchData = async () => {
+        setIsLoading(true);
+        try {
+          // 并行获取数据
+          const [profilesResponse, forceDomainResponse] = await Promise.all([
+            conferencesApi.getProfiles(),
+            conferencesApi.getForceDomain(),
+          ]);
+
+          setProfiles((profilesResponse.data as ConferenceProfile[]) || []);
+          setForceDomain(
+            (forceDomainResponse.data as { force_domain?: string })?.force_domain || "",
+          );
+        } catch (error) {
+          console.error("Failed to fetch conference data:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      void fetchData();
+    }
+  }, [open]);
 
   // 定义表单配置
   const formConfig: FormConfig = {
@@ -51,26 +86,48 @@ export function CreateConferenceDialog({
         required: false,
       },
       {
-        name: "number",
+        name: "nbr",
         label: tt("number"),
         type: "text",
         placeholder: "",
         required: true,
       },
       {
-        name: "template",
+        name: "profile_id",
         label: "模板",
         type: "select",
         required: true,
-        options: [
-          {
-            value: "[default]conference profile",
-            label: "[default]conference profile",
-          },
-        ],
-        defaultValue: "[default]conference profile",
+        options: profiles.map((profile) => ({
+          value: profile.id.toString(),
+          label: `[${profile.name}]${profile.description || ""}`,
+        })),
+        defaultValue: profiles.length > 0 ? profiles[0].id.toString() : "",
       },
     ],
+  };
+
+  // 处理表单提交
+  const handleSubmit = async (data: CreateConferenceFormData) => {
+    try {
+      // 构建提交数据
+      const roomData = {
+        name: data.name,
+        description: data.description || "",
+        nbr: data.nbr,
+        realm: forceDomain || "",
+        profile_id: data.profile_id,
+        canvas_count: data.canvas_count || "1",
+        capacity: data.capacity || "10",
+        bandwidth: data.bandwidth || "1mb",
+        fps: data.fps || "15",
+        video_mode: data.video_mode || "CONF_VIDEO_MODE_PASSTHROUGH",
+      };
+
+      await onSubmit(roomData);
+    } catch (error) {
+      console.error("Failed to create conference:", error);
+      throw error;
+    }
   };
 
   return (
@@ -79,9 +136,10 @@ export function CreateConferenceDialog({
       onOpenChange={onOpenChange}
       title={tt("newConference")}
       config={formConfig}
-      onSubmit={onSubmit}
+      onSubmit={handleSubmit}
       submitText={tc("submit")}
       cancelText={tc("close")}
+      loading={isLoading}
       contentClassName="sm:max-w-[500px]"
     />
   );
@@ -140,7 +198,7 @@ export function ViewConferenceDialog({
                   {tt("number")}
                 </Label>
                 <div className="col-span-8">
-                  <span>{conference.number}</span>
+                  <span>{conference.nbr}</span>
                 </div>
               </div>
 
@@ -178,9 +236,9 @@ export function ViewConferenceDialog({
 
               {/* 域 */}
               <div className="grid grid-cols-12 items-center gap-x-4">
-                <Label className="col-span-4 text-right font-medium">{tt("domain")}</Label>
+                <Label className="col-span-4 text-right font-medium">{tt("realm")}</Label>
                 <div className="col-span-8">
-                  <span>{conference.domain}</span>
+                  <span>{conference.realm}</span>
                 </div>
               </div>
 

@@ -10,27 +10,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { dodsApi, extensionsApi, routesApi, type DOD } from "@/lib/api-client";
 import { useParams } from "next/navigation";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { CommonBreadcrumb } from "@/components/ui/common-breadcrumb";
+import { EditableSection, EditableField } from "@/components/ui/editable-section";
 
 export default function DodDetailPage() {
   const router = useRouter();
@@ -41,29 +23,12 @@ export default function DodDetailPage() {
 
   const [dod, setDod] = useState<DOD | null>(null);
   const [extensions, setExtensions] = useState<any[]>([]);
-  const [gateways, setGateways] = useState<any[]>([]);
-  const [trunks, setTrunks] = useState<any[]>([]);
-  const [distributors, setDistributors] = useState<any[]>([]);
+  const [resourceTypes, setResourceTypes] = useState<any[]>([]);
+  const [nameList, setNameList] = useState<any[]>([]);
+  const [withKa, setWithKa] = useState<boolean>(true);
   const [selectedType, setSelectedType] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-
-  const editDodSchema = z.object({
-    line_number: z.string().min(1, { message: "请输入线路号码" }),
-    extn: z.string().min(1, { message: "请选择分机" }),
-    type: z.string().min(1, { message: "请选择资源类型" }),
-    ref_id: z.string().min(1, { message: "请选择资源" }),
-  });
-
-  const form = useForm({
-    resolver: zodResolver(editDodSchema),
-    defaultValues: {
-      line_number: "",
-      extn: "",
-      type: "",
-      ref_id: "",
-    },
-  });
 
   const loadDod = useCallback(async () => {
     try {
@@ -71,19 +36,13 @@ export default function DodDetailPage() {
       const response = await dodsApi.getById(parseInt(dodId, 10));
       setDod(response.data);
       setSelectedType(response.data.type);
-      form.reset({
-        line_number: response.data.line_number,
-        extn: response.data.extn,
-        type: response.data.type,
-        ref_id: response.data.ref_id?.toString() || "",
-      });
     } catch (error) {
       console.error("Failed to load dod:", error);
       toast.error(ttt("loadFailed") || "加载失败");
     } finally {
       setLoading(false);
     }
-  }, [dodId, form, ttt]);
+  }, [dodId, ttt]);
 
   const loadExtensions = useCallback(async () => {
     try {
@@ -94,86 +53,116 @@ export default function DodDetailPage() {
     }
   }, []);
 
-  const loadGateways = useCallback(async () => {
+  const getNameList = useCallback(async (type: string) => {
     try {
-      const response = await routesApi.getGateways();
-      setGateways(response.data?.data || []);
+      let response;
+      if (type === "GATEWAY") {
+        response = await routesApi.getGateways();
+      } else if (type === "DISTRIBUTORS") {
+        response = await routesApi.getDistributors();
+      } else {
+        response = await routesApi.getTrunks();
+      }
+
+      setNameList((response as any).data?.data || []);
     } catch (error) {
-      console.error("Failed to load gateways:", error);
+      console.error("Failed to load name list:", error);
+      setNameList([]);
     }
   }, []);
 
-  const loadTrunks = useCallback(async () => {
-    try {
-      const response = await routesApi.getTrunks();
-      setTrunks(response.data?.data || []);
-    } catch (error) {
-      console.error("Failed to load trunks:", error);
+  const getResourceTypes = useCallback(() => {
+    let types = [
+      { k: "GATEWAY", v: "GATEWAY" },
+      { k: "DISTRIBUTORS", v: "DISTRIBUTORS" },
+    ];
+    if (withKa) {
+      types = [
+        { k: "GATEWAY", v: "GATEWAY" },
+        { k: "TRUNKS", v: "TRUNKS" },
+        { k: "DISTRIBUTORS", v: "DISTRIBUTORS" },
+      ];
     }
-  }, []);
+    setResourceTypes(types);
+  }, [withKa]);
 
-  const loadDistributors = useCallback(async () => {
+  const checkWithKa = useCallback(async () => {
     try {
-      const response = await routesApi.getDistributors();
-      setDistributors(response.data?.data || []);
+      const response = await routesApi.getDicts("XUI");
+      if (response.data) {
+        const isProductGw = response.data.find((item: any) => item.k === "IS_PRODUCT_GW");
+        if (isProductGw && isProductGw.v === "false") {
+          setWithKa(false);
+        } else {
+          setWithKa(true);
+        }
+      } else {
+        setWithKa(true);
+      }
     } catch (error) {
-      console.error("Failed to load distributors:", error);
+      console.error("Failed to check with_ka:", error);
+      setWithKa(true); // 默认值
     }
   }, []);
 
   useEffect(() => {
+    void checkWithKa();
     void loadDod();
     void loadExtensions();
-  }, [loadDod, loadExtensions]);
+  }, [loadDod, loadExtensions, checkWithKa]);
 
   useEffect(() => {
-    const loadResources = async () => {
-      if (selectedType === "GATEWAY") {
-        await loadGateways();
-      } else if (selectedType === "TRUNKS") {
-        await loadTrunks();
-      } else if (selectedType === "DISTRIBUTORS") {
-        await loadDistributors();
-      }
-    };
+    getResourceTypes();
+  }, [withKa, getResourceTypes]);
 
-    void loadResources();
-  }, [selectedType, loadGateways, loadTrunks, loadDistributors]);
+  useEffect(() => {
+    if (selectedType) {
+      void getNameList(selectedType);
+    }
+  }, [selectedType, getNameList]);
+
+  useEffect(() => {
+    if (dod?.type) {
+      void getNameList(dod.type);
+    }
+  }, [dod?.type, getNameList]);
 
   const handleTypeChange = (type: string) => {
     setSelectedType(type);
-    form.resetField("ref_id");
   };
 
-  const handleSubmit = async (values: z.infer<typeof editDodSchema>) => {
+  const handleSave = async (formData: any) => {
     try {
       setLoading(true);
 
+      // 处理表单数据
+      const processedData = { ...formData };
+
       let name = "";
-      if (values.type === "GATEWAY") {
-        const gateway = gateways.find((g) => g.id === values.ref_id);
-        name = gateway?.name || "";
-      } else if (values.type === "TRUNKS") {
-        const trunk = trunks.find((t) => t.id === values.ref_id);
-        name = trunk?.name || "";
-      } else if (values.type === "DISTRIBUTORS") {
-        const distributor = distributors.find((d) => d.id === values.ref_id);
-        name = distributor?.name || "";
+      if (processedData.type) {
+        const resource = nameList.find((item) => item.id === processedData.ref_id);
+        name = resource?.name || "";
       }
 
       await dodsApi.update(parseInt(dodId, 10), {
-        ...values,
+        ...processedData,
         name,
       });
 
       toast.success(ttt("saveSuccess") || "保存成功");
-      router.push(`/${params.locale}/dod`);
+      await loadDod();
+      return true;
     } catch (error: any) {
       console.error("Failed to update dod:", error);
       toast.error(`${ttt("saveFailed") || "保存失败"}: ${error?.message || error?.text || error}`);
+      return false;
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    console.log("取消编辑");
   };
 
   const handleDelete = async () => {
@@ -193,23 +182,16 @@ export default function DodDetailPage() {
   };
 
   const getResourceOptions = () => {
-    if (selectedType === "GATEWAY") {
-      return gateways.map((gateway) => ({
-        value: gateway.id.toString(),
-        label: gateway.name,
-      }));
-    } else if (selectedType === "TRUNKS") {
-      return trunks.map((trunk) => ({
-        value: trunk.id.toString(),
-        label: trunk.name,
-      }));
-    } else if (selectedType === "DISTRIBUTORS") {
-      return distributors.map((distributor) => ({
-        value: distributor.id.toString(),
-        label: distributor.name,
-      }));
-    }
-    return [];
+    return nameList.map((item) => ({
+      value: item.id.toString(),
+      label: item.name,
+    }));
+  };
+
+  const getResourceName = () => {
+    if (!dod || !dod.ref_id) return "";
+    const resource = nameList.find((item) => item.id === dod.ref_id);
+    return resource?.name || "";
   };
 
   if (loading && !dod) {
@@ -251,156 +233,83 @@ export default function DodDetailPage() {
               <div className="px-4 lg:px-6">
                 <CommonBreadcrumb
                   items={[
+                    { label: t("call"), href: `/${params.locale}/dashboard` },
                     { label: t("dod"), href: `/${params.locale}/dod` },
                     { label: dod.line_number, isCurrentPage: true },
                   ]}
                 />
 
                 <div className="flex items-center justify-between mb-4">
-                  <Button variant="outline" onClick={() => router.push(`/${params.locale}/dod`)}>
-                    {ttt("back") || "返回"}
-                  </Button>
+                  <div className="flex items-center gap-4">
+                    <h1 className="text-2xl font-bold">{dod.line_number}</h1>
+                    <span className="text-muted-foreground">ID: {dod.id}</span>
+                  </div>
                   <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
                     {ttt("delete") || "删除"}
                   </Button>
                 </div>
 
-                <Form {...form}>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      void form.handleSubmit(handleSubmit)(e);
+                <EditableSection
+                  title={t("dodInfo") || "DOD信息"}
+                  defaultValues={{
+                    ...dod,
+                  }}
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                >
+                  <EditableField
+                    label={t("lineNumber") || "线路号码"}
+                    name="line_number"
+                    value={dod.line_number}
+                    type="text"
+                    inputPlaceholder={t("lineNumberPlaceholder") || "请输入线路号码"}
+                    required
+                  />
+                  <EditableField
+                    label={t("extension") || "分机"}
+                    name="numbers"
+                    value={dod.numbers}
+                    type="select"
+                    options={extensions.map((ext) => ({
+                      value: ext.extn,
+                      label: `${ext.name} | ${ext.extn}`,
+                    }))}
+                    required
+                  />
+                  <EditableField
+                    label={t("resourceType") + " (DOD)"}
+                    name="type"
+                    value={dod.type}
+                    type="select"
+                    options={resourceTypes.map((item: any) => ({
+                      value: item.k,
+                      label: t(item.v.toLowerCase()) || item.v,
+                    }))}
+                    required
+                    onChange={(value) => {
+                      handleTypeChange(value);
                     }}
-                  >
-                    <div className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="line_number"
-                        render={({ field }) => (
-                          <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                            <FormLabel className="col-span-4 text-right justify-center flex">
-                              <span className="text-destructive mr-1">*</span>
-                              {t("lineNumber")}
-                            </FormLabel>
-                            <FormControl className="col-span-8">
-                              <Input {...field} placeholder={t("lineNumberPlaceholder")} />
-                            </FormControl>
-                            <FormMessage className="col-span-8 col-start-5" />
-                          </FormItem>
-                        )}
-                      />
+                  />
+                  <EditableField
+                    label={t("resourceName") + " (DOD)"}
+                    name="ref_id"
+                    value={dod.ref_id?.toString() || ""}
+                    type="select"
+                    options={getResourceOptions()}
+                    required
+                    disabled={!selectedType}
+                  />
 
-                      <FormField
-                        control={form.control}
-                        name="extn"
-                        render={({ field }) => (
-                          <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                            <FormLabel className="col-span-4 text-right justify-center flex">
-                              <span className="text-destructive mr-1">*</span>
-                              {t("extension")}
-                            </FormLabel>
-                            <FormControl className="col-span-8">
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t("selectExtension")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {extensions.map((ext) => (
-                                    <SelectItem key={ext.extn} value={ext.extn}>
-                                      {ext.name} | {ext.extn}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage className="col-span-8 col-start-5" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="type"
-                        render={({ field }) => (
-                          <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                            <FormLabel className="col-span-4 text-right justify-center flex">
-                              <span className="text-destructive mr-1">*</span>
-                              {t("resourceType")}
-                            </FormLabel>
-                            <FormControl className="col-span-8">
-                              <Select
-                                onValueChange={(value) => {
-                                  field.onChange(value);
-                                  handleTypeChange(value);
-                                }}
-                                value={field.value}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t("selectResourceType")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="GATEWAY">{t("gateway")}</SelectItem>
-                                  <SelectItem value="TRUNKS">{t("trunk")}</SelectItem>
-                                  <SelectItem value="DISTRIBUTORS">{t("distributor")}</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage className="col-span-8 col-start-5" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="ref_id"
-                        render={({ field }) => (
-                          <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                            <FormLabel className="col-span-4 text-right justify-center flex">
-                              <span className="text-destructive mr-1">*</span>
-                              {t(selectedType.toLowerCase())}
-                            </FormLabel>
-                            <FormControl className="col-span-8">
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value}
-                                disabled={!selectedType}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t("selectResource")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {getResourceOptions().map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                      {option.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage className="col-span-8 col-start-5" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => router.push(`/${params.locale}/dod`)}
-                        >
-                          {ttt("cancel") || "取消"}
-                        </Button>
-                        <Button
-                          type="submit"
-                          className="bg-primary text-white hover:bg-primary/90"
-                          disabled={loading}
-                        >
-                          {loading ? ttt("submitting") : ttt("save")}
-                        </Button>
-                      </div>
-                    </div>
-                  </form>
-                </Form>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <EditableField
+                      label={t("name") || "名称"}
+                      name="name"
+                      value={dod.name || ""}
+                      type="text"
+                      inputPlaceholder={t("namePlaceholder") || "请输入名称"}
+                    />
+                  </div>
+                </EditableSection>
               </div>
             </div>
           </div>

@@ -11,15 +11,11 @@ import { toast } from "sonner";
 import { dodsApi, type DOD, type ListDodsQuery } from "@/lib/api-client";
 import { ListFilterForm, ListPagination } from "@/components/ui/list-components";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, DownloadIcon, UploadIcon, ChevronDownIcon } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { PlusIcon, DownloadIcon, UploadIcon } from "lucide-react";
 import { CreateDodDialog } from "./components/create-dod-dialog";
 import { ImportDodDialog } from "./components/import-dod-dialog";
+// @ts-expect-error xlsx zahl payload has no type declarations
+import XLSX_ZAHL_PAYLOAD from "xlsx/dist/xlsx.zahl";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const DEFAULT_PAGE_SIZE = 10;
@@ -112,6 +108,25 @@ export default function DodPage() {
     void loadDods(currentPage, pageSize, filters);
   }, [loadDods, currentPage, pageSize, filters]);
 
+  const handleExport = async () => {
+    const lang = localStorage.getItem("xui.lang");
+    try {
+      const response = await dodsApi.download({ language: lang || "en-US" });
+      const data = response.data;
+
+      void import("xlsx").then((XLSX) => {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([...data]);
+        XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+        XLSX.writeFile(wb, "dods_download.xlsx", { numbers: XLSX_ZAHL_PAYLOAD, compression: true });
+        toast.success(tt("Download successfully!") || "下载成功");
+      });
+    } catch (error) {
+      console.error("Failed to download dods:", error);
+      toast.error(tt("Export Failed") || "导出失败");
+    }
+  };
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
@@ -157,20 +172,10 @@ export default function DodPage() {
 
                   <div className="flex items-center justify-between gap-2">
                     <div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <DownloadIcon className="mr-2 h-4 w-4" />
-                            {ttt("export")}
-                            <ChevronDownIcon className="ml-2 h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem onClick={() => void dodsApi.download()}>
-                            {ttt("export")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button variant="outline" size="sm" onClick={void handleExport}>
+                        <DownloadIcon className="mr-2 h-4 w-4" />
+                        {ttt("export")}
+                      </Button>
 
                       <Button
                         variant="outline"

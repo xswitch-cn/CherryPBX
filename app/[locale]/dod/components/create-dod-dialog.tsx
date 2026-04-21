@@ -49,6 +49,7 @@ export function CreateDodDialog({
   onSubmit: () => void;
 }) {
   const t = useTranslations("dod");
+  const tt = useTranslations("table");
   const ttt = useTranslations("common");
   const [extensions, setExtensions] = useState<any[]>([]);
   const [gateways, setGateways] = useState<any[]>([]);
@@ -80,26 +81,39 @@ export function CreateDodDialog({
     void loadExtensions();
   }, []);
 
-  useEffect(() => {
+  const handleTypeChange = (type: string) => {
+    setSelectedType(type);
+    form.resetField("ref_id");
+
+    // 当资源类型改变时，加载对应资源列表并设置默认值
     const loadResources = async () => {
-      if (selectedType === "GATEWAY") {
+      if (type === "GATEWAY") {
         try {
           const response = await routesApi.getGateways();
           setGateways(response.data?.data || []);
+          if (response.data?.data?.length > 0) {
+            form.setValue("ref_id", response.data.data[0].id.toString());
+          }
         } catch (error) {
           console.error("Failed to load gateways:", error);
         }
-      } else if (selectedType === "TRUNKS") {
+      } else if (type === "TRUNKS") {
         try {
           const response = await routesApi.getTrunks();
           setTrunks(response.data?.data || []);
+          if (response.data?.data?.length > 0) {
+            form.setValue("ref_id", response.data.data[0].id.toString());
+          }
         } catch (error) {
           console.error("Failed to load trunks:", error);
         }
-      } else if (selectedType === "DISTRIBUTORS") {
+      } else if (type === "DISTRIBUTORS") {
         try {
           const response = await routesApi.getDistributors();
           setDistributors(response.data?.data || []);
+          if (response.data?.data?.length > 0) {
+            form.setValue("ref_id", response.data.data[0].id.toString());
+          }
         } catch (error) {
           console.error("Failed to load distributors:", error);
         }
@@ -107,11 +121,6 @@ export function CreateDodDialog({
     };
 
     void loadResources();
-  }, [selectedType]);
-
-  const handleTypeChange = (type: string) => {
-    setSelectedType(type);
-    form.resetField("ref_id");
   };
 
   const handleCreate = async (values: z.infer<typeof createDodSchema>) => {
@@ -192,12 +201,12 @@ export function CreateDodDialog({
                 name="line_number"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                    <FormLabel className="col-span-4 text-right justify-center flex">
+                    <FormLabel htmlFor="line_number" className="col-span-4 text-right">
                       <span className="text-destructive mr-1">*</span>
                       {t("lineNumber")}
                     </FormLabel>
                     <FormControl className="col-span-8">
-                      <Input {...field} placeholder={t("lineNumberPlaceholder")} />
+                      <Input id="line_number" {...field} placeholder={t("lineNumberPlaceholder")} />
                     </FormControl>
                     <FormMessage className="col-span-8 col-start-5" />
                   </FormItem>
@@ -209,13 +218,13 @@ export function CreateDodDialog({
                 name="extn"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                    <FormLabel className="col-span-4 text-right justify-center flex">
+                    <FormLabel htmlFor="extn" className="col-span-4 text-right font-medium">
                       <span className="text-destructive mr-1">*</span>
                       {t("extension")}
                     </FormLabel>
                     <FormControl className="col-span-8">
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <SelectTrigger>
+                        <SelectTrigger id="extn">
                           <SelectValue placeholder={t("selectExtension")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -237,8 +246,7 @@ export function CreateDodDialog({
                 name="type"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                    <FormLabel className="col-span-4 text-right justify-center flex">
-                      <span className="text-destructive mr-1">*</span>
+                    <FormLabel htmlFor="type" className="col-span-4 text-right">
                       {t("resourceType")}
                     </FormLabel>
                     <FormControl className="col-span-8">
@@ -249,7 +257,7 @@ export function CreateDodDialog({
                         }}
                         value={field.value}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger id="type">
                           <SelectValue placeholder={t("selectResourceType")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -269,18 +277,13 @@ export function CreateDodDialog({
                 name="ref_id"
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-12 items-center gap-x-4">
-                    <FormLabel className="col-span-4 text-right justify-center flex">
-                      <span className="text-destructive mr-1">*</span>
-                      {t(selectedType.toLowerCase())}
+                    <FormLabel htmlFor="ref_id" className="col-span-4 text-right font-medium">
+                      {t("resourceName") || "Resource Name"}
                     </FormLabel>
                     <FormControl className="col-span-8">
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={!selectedType}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("selectResource")} />
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger id="ref_id">
+                          <SelectValue placeholder={t("selectResource") || "Select Resource"} />
                         </SelectTrigger>
                         <SelectContent>
                           {getResourceOptions().map((option) => (
@@ -296,16 +299,12 @@ export function CreateDodDialog({
                 )}
               />
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {ttt("cancel")}
+                {ttt("close") || "关闭"}
               </Button>
-              <Button
-                type="submit"
-                className="ml-2 bg-primary text-white hover:bg-primary/90"
-                disabled={loading}
-              >
-                {loading ? ttt("submitting") : ttt("submit")}
+              <Button type="submit" disabled={loading} className="bg-green-500 hover:bg-green-600">
+                {loading ? tt("submitting") || "提交中" : ttt("submit") || "提交"}
               </Button>
             </DialogFooter>
           </form>

@@ -4,8 +4,9 @@ import type { QueryParams } from "../types/common";
 export type ListDodsQuery = QueryParams & {
   page?: number;
   page_size?: number;
+  language?: string;
+  line_number?: string;
   extn?: string;
-  hpack?: boolean;
 };
 
 export interface DOD {
@@ -14,7 +15,7 @@ export interface DOD {
   name?: string;
   type: string;
   line_number: string;
-  extn: string;
+  numbers: string;
   dod_id?: string;
 }
 

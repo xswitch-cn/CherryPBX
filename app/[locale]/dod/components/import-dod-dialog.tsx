@@ -24,6 +24,7 @@ export function ImportDodDialog({
   onOpenChange: (open: boolean) => void;
   onImportSuccess: () => void;
 }) {
+  const tt = useTranslations("table");
   const ttt = useTranslations("common");
   const [importFiles, setImportFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,7 +48,7 @@ export function ImportDodDialog({
       for (const file of importFiles) {
         await new Promise<void>((resolve, _reject) => {
           const fileReader = new FileReader();
-          fileReader.readAsArrayBuffer(file);
+          fileReader.readAsBinaryString(file);
 
           fileReader.onload = async (event) => {
             try {
@@ -64,24 +65,44 @@ export function ImportDodDialog({
                 throw new Error(ttt("Import Failed") || "XLSX库加载失败");
               }
 
-              const workbook = XLSX.read(result, { type: "array" });
+              const workbook = XLSX.read(result, { type: "binary" });
               let data: any[] = [];
-
+              let newData: any[] = [];
               if (workbook && workbook.Sheets) {
                 for (const sheet in workbook.Sheets) {
                   if (Object.prototype.hasOwnProperty.call(workbook.Sheets, sheet)) {
-                    const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet], {
-                      raw: false,
-                    });
-                    data = data.concat(sheetData);
+                    data = data.concat(
+                      XLSX.utils.sheet_to_json(workbook.Sheets[sheet], { raw: false }),
+                    );
+                    newData = data
+                      .map((row) => {
+                        const newRow = {};
+                        Object.keys(row).forEach((key) => {
+                          if (row[key] !== "" && row[key] !== null && row[key] !== undefined) {
+                            (newRow as Record<string, any>)[key] = row[key];
+                          }
+                        });
+                        return newRow;
+                      })
+                      .filter((row) => Object.keys(row).length > 0);
+                    break; // 如果只取第一张表，就取消注释这行
                   }
                 }
               }
 
-              await dodsApi.upload({ dods: data });
+              try {
+                await dodsApi.upload({ dods: newData });
 
-              toast.success(`${ttt("Import Success") || "导入成功"}: ${data.length} 项`);
-              resolve();
+                toast.success(ttt("Import Success"));
+              } catch (error: any) {
+                console.error("Failed to upload DODs:", error);
+                console.error("Error response:", error.response);
+                toast.error(
+                  `${ttt("Import Failed") || "导入失败"}: ${error.message || "未知错误"}`,
+                );
+              } finally {
+                resolve();
+              }
             } catch (error) {
               console.error(`Failed to parse Excel file ${file.name}:`, error);
               toast.error(`${ttt("Import Failed") || "导入失败"}: ${file.name}`);
@@ -173,7 +194,7 @@ export function ImportDodDialog({
                     size="sm"
                     onClick={() => setImportFiles((prev) => prev.filter((_, i) => i !== index))}
                   >
-                    {ttt("Delete") || "删除"}
+                    {ttt("delete") || "删除"}
                   </Button>
                 </div>
               ))}
@@ -188,14 +209,14 @@ export function ImportDodDialog({
                 onOpenChange(false);
               }}
             >
-              {ttt("close") || "关闭"}
+              {ttt("cancel") || "关闭"}
             </Button>
             <Button
-              onClick={void handleImport}
+              onClick={() => void handleImport()}
               className="ml-2 bg-primary text-white hover:bg-primary/90"
               disabled={importFiles.length === 0 || loading}
             >
-              {loading ? ttt("submitting") : ttt("submit")}
+              {loading ? tt("submitting") || "提交中" : ttt("submit") || "提交"}
             </Button>
           </DialogFooter>
         </div>

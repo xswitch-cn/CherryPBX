@@ -922,6 +922,7 @@
     "deletedDid": "已删除DID：{number}"
   },
   "dod": {
+    "id": "ID",
     "addDod": "添加DOD",
     "dodNumber": "DOD号码",
     "provider": "运营商",
@@ -946,8 +947,46 @@
     "trunk": "中继",
     "distributor": "分配器",
     "selectResource": "请选择资源",
-    "deleteDod": "删除DOD",
-    "deleteItem": "确认删除项 {item} 吗？"
+    "deleteDod": "删除 DOD",
+    "deleteItem": "确认删除项 {item} 吗？",
+    "Download successfully!": "下载成功",
+    "type": "类型",
+    "typePlaceholder": "请输入类型",
+    "Resource Type": "资源类型",
+    "Extension": "分机",
+    "Line Number": "线路号码",
+    "GATEWAY": "网关",
+    "TRUNK": "中继",
+    "DISTRIBUTOR": "分配器",
+    "nameList": "资源名列表",
+    "nameListPlaceholder": "请输入资源名列表",
+    "dodInfo": "DOD信息"
+  },
+  "did": {
+    "id": "ID",
+    "addDid": "添加DID",
+    "didInfo": "DID信息",
+    "lineNumber": "线路号码",
+    "lineNumberPlaceholder": "请输入线路号码",
+    "extension": "分机",
+    "selectExtension": "请选择分机",
+    "description": "描述",
+    "descriptionPlaceholder": "请输入描述",
+    "noDid": "未找到DID。",
+    "failedToFetchDids": "加载DID失败",
+    "createdDidSuccess": "DID创建成功",
+    "createdDidFailed": "DID创建失败",
+    "updatedDidSuccess": "DID更新成功",
+    "updatedDidFailed": "DID更新失败",
+    "deletedDid": "已删除DID：{number}",
+    "deletedDidFailed": "DID删除失败",
+    "failedToFetchDid": "加载DID失败",
+    "didNotFound": "DID不存在",
+    "deleteDid": "删除 DID",
+    "deleteItem": "确认删除项 {item} 吗？",
+    "Download successfully!": "下载成功",
+    "Binding Extension": "绑定分机",
+    "DID Number": "DID号码"
   },
   "featureCodes": {
     "addCode": "添加功能码",
@@ -1365,6 +1404,7 @@
     "select": "选择",
     "selectDate": "选择日期",
     "import":"导入",
-    "export":"导出"
+    "export":"导出",
+    "Import Success": "导入成功"
   }
 }

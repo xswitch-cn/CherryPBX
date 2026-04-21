@@ -10,31 +10,23 @@ import {
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Badge } from "@/components/ui/badge";
+import { dodsApi, extensionsApi } from "@/lib/api-client";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -43,117 +35,174 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Columns3Icon,
-  ChevronDownIcon,
-  PlusIcon,
-  ChevronsLeftIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronsRightIcon,
-  EllipsisVerticalIcon,
-  SearchIcon,
-  PhoneOutgoingIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from "lucide-react";
+import { EllipsisVerticalIcon } from "lucide-react";
+import { Link } from "@/navigation";
 
 export const dodSchema = z.object({
-  id: z.number(),
-  dodNumber: z.string(),
-  provider: z.string(),
-  callerId: z.string(),
-  status: z.string(),
-  description: z.string(),
-  usedBy: z.string(),
+  id: z.string(),
+  line_number: z.string(),
+  extn: z.string(),
+  extn_id: z.string(),
+  type: z.string(),
+  name: z.string(),
+  ref_id: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  deleted_at: z.string(),
 });
 
-export function DodTable({ data: initialData }: { data: z.infer<typeof dodSchema>[] }) {
+export function DodTable({
+  data: initialData,
+  onDataChange,
+  pageSize = 10,
+  pageIndex = 0,
+}: {
+  data: any[];
+  onDataChange?: () => void;
+  pageSize?: number;
+  pageIndex?: number;
+}) {
   const t = useTranslations("dod");
   const tt = useTranslations("table");
-  const [data] = React.useState(() => initialData);
-  const [rowSelection, setRowSelection] = React.useState({});
+  const ttt = useTranslations("common");
+
+  const [data, setData] = React.useState(() => initialData);
+
+  React.useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
+
+  React.useEffect(() => {
+    setPagination({
+      pageIndex,
+      pageSize,
+    });
+  }, [pageSize, pageIndex]);
+
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
+  const [sorting, setSorting] = React.useState<SortingState>([{ id: "id", desc: true }]);
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [selectedDod, setSelectedDod] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [extensions, setExtensions] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchExtensions = async () => {
+      try {
+        const response = await extensionsApi.list({ page: 1, perPage: 1000 });
+        if (response?.data?.data) {
+          setExtensions(response.data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch extensions:", error);
+      }
+    };
+
+    void fetchExtensions();
+  }, []);
+
+  const handleDelete = async () => {
+    if (!selectedDod) return;
+
+    try {
+      setLoading(true);
+      const response = (await dodsApi.delete(selectedDod.id)) as any;
+      if (response?.data?.success || response?.data?.message == "success") {
+        toast.success(ttt("deleteSuccess") || "删除成功");
+        const updatedData = data.filter((dod) => dod.id !== selectedDod.id);
+        setData(updatedData);
+        if (onDataChange) {
+          onDataChange();
+        }
+      } else {
+        toast.error(`${t("deleteError") || "删除错误"}: ${response?.data?.message || "未知错误"}`);
+      }
+      setDeleteDialogOpen(false);
+      setSelectedDod(null);
+    } catch (error: any) {
+      console.error("Failed to delete dod:", error);
+      toast.error(`${t("deleteError") || "删除错误"}: ${error?.message || error?.text || error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const columns = React.useMemo<ColumnDef<z.infer<typeof dodSchema>>[]>(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <div className="flex items-center justify-center">
-            <Checkbox
-              checked={
-                table.getIsAllPageRowsSelected() ||
-                (table.getIsSomePageRowsSelected() && "indeterminate")
-              }
-              onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
-            />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="flex items-center justify-center">
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(v) => row.toggleSelected(!!v)}
-            />
-          </div>
-        ),
-        enableSorting: false,
-        enableHiding: false,
+        accessorKey: "id",
+        header: t("id"),
+        cell: ({ row }) => <span>{row.original.id}</span>,
       },
       {
-        accessorKey: "dodNumber",
-        header: t("dodNumber"),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900">
-              <PhoneOutgoingIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-            </div>
-            <span className="font-mono font-medium">{row.original.dodNumber}</span>
-          </div>
-        ),
+        accessorKey: "line_number",
+        header: t("lineNumber"),
+        cell: ({ row }) => <span>{row.original.line_number}</span>,
       },
-      { accessorKey: "provider", header: t("provider") },
-      { accessorKey: "callerId", header: t("callerId") },
       {
-        accessorKey: "status",
-        header: t("status"),
-        cell: ({ row }) =>
-          row.original.status === "Active" ? (
-            <div className="flex items-center gap-1.5">
-              <CheckCircleIcon className="h-4 w-4 text-green-500" />
-              <span className="text-green-600">{t("active")}</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <XCircleIcon className="h-4 w-4 text-red-500" />
-              <span className="text-red-600">{t("inactive")}</span>
-            </div>
-          ),
+        accessorKey: "extn",
+        header: t("extension"),
+        cell: ({ row }) => {
+          const extn = row.original.extn;
+          const extension = extensions.find((ext) => ext.extn === extn);
+          if (extension) {
+            return (
+              <Link href={`/extensions/${extension.id}`} className="text-primary hover:underline">
+                {extn}
+              </Link>
+            );
+          }
+          return <span>{extn}</span>;
+        },
       },
-      { accessorKey: "description", header: t("description") },
-      { accessorKey: "usedBy", header: t("usedBy") },
+      {
+        accessorKey: "type",
+        header: t("resourceType"),
+        cell: ({ row }) => <span>{row.original.type || "-"}</span>,
+      },
+      {
+        accessorKey: "name",
+        header: t("resourceName"),
+        cell: ({ row }) => <span>{row.original.name || "-"}</span>,
+      },
       {
         id: "actions",
         cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex size-8 text-muted-foreground" size="icon">
+              <Button
+                variant="ghost"
+                className="flex size-8 text-muted-foreground data-[state=open]:bg-muted"
+                size="icon"
+              >
                 <EllipsisVerticalIcon />
+                <span className="sr-only">{tt("edit")}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem
-                onClick={() => toast.info(t("editingDod", { number: row.original.dodNumber }))}
+                onClick={() => {
+                  const locale = document.documentElement.lang || "zh";
+                  window.location.href = `/${locale}/dod/${row.original.id}`;
+                }}
               >
-                {tt("edit")}
+                {tt("details")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => toast.error(t("deletedDod", { number: row.original.dodNumber }))}
+                onClick={() => {
+                  setSelectedDod(row.original);
+                  setDeleteDialogOpen(true);
+                }}
               >
                 {tt("delete")}
               </DropdownMenuItem>
@@ -162,16 +211,25 @@ export function DodTable({ data: initialData }: { data: z.infer<typeof dodSchema
         ),
       },
     ],
-    [t, tt],
+    [t, tt, extensions],
   );
 
   const table = useReactTable({
     data,
     columns,
-    state: { columnVisibility, rowSelection, pagination, globalFilter },
+    state: {
+      sorting,
+      columnVisibility,
+      rowSelection,
+      columnFilters,
+      pagination,
+      globalFilter,
+    },
     getRowId: (row) => row.id.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     onGlobalFilterChange: setGlobalFilter,
@@ -183,56 +241,20 @@ export function DodTable({ data: initialData }: { data: z.infer<typeof dodSchema
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="relative">
-          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("searchDod")}
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="h-9 w-64 pl-8"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns3Icon className="mr-2 h-4 w-4" />
-                {tt("columns")}
-                <ChevronDownIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((c) => c.getCanHide())
-                .map((c) => (
-                  <DropdownMenuCheckboxItem
-                    key={c.id}
-                    checked={c.getIsVisible()}
-                    onCheckedChange={(v) => c.toggleVisibility(!!v)}
-                  >
-                    {c.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button size="sm" onClick={() => toast.success(t("addDod"))}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            {t("addDod")}
-          </Button>
-        </div>
-      </div>
       <div className="overflow-hidden rounded-lg border">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-muted">
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((h) => (
-                  <TableHead key={h.id}>
-                    {h.isPlaceholder ? null : flexRender(h.column.columnDef.header, h.getContext())}
-                  </TableHead>
-                ))}
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id} colSpan={header.colSpan}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -257,79 +279,16 @@ export function DodTable({ data: initialData }: { data: z.infer<typeof dodSchema
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between px-4">
-        <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-          {tt("selectedRows", {
-            selected: table.getFilteredSelectedRowModel().rows.length,
-            total: table.getFilteredRowModel().rows.length,
-          })}
-        </div>
-        <div className="flex w-full items-center gap-8 lg:w-fit">
-          <div className="hidden items-center gap-2 lg:flex">
-            <Label className="text-sm font-medium">{tt("rowsPerPage")}</Label>
-            <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(v) => table.setPageSize(Number(v))}
-            >
-              <SelectTrigger size="sm" className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent side="top">
-                <SelectGroup>
-                  {[10, 20, 30, 40, 50].map((ps) => (
-                    <SelectItem key={ps} value={`${ps}`}>
-                      {ps}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex w-fit items-center justify-center text-sm font-medium">
-            {tt("pageOf", {
-              current: table.getState().pagination.pageIndex + 1,
-              total: table.getPageCount(),
-            })}
-          </div>
-          <div className="ml-auto flex items-center gap-2 lg:ml-0">
-            <Button
-              variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronsLeftIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="size-8"
-              size="icon"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="size-8"
-              size="icon"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRightIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="hidden size-8 lg:flex"
-              size="icon"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronsRightIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onSubmit={handleDelete}
+        title={ttt("Confirm to Delete ?") || "确认删除"}
+        description={t("deleteItem", { item: selectedDod?.line_number })}
+        deleteText={ttt("confirm") || "确认"}
+        cancelText={ttt("cancel") || "取消"}
+        isLoading={loading}
+      />
     </div>
   );
 }

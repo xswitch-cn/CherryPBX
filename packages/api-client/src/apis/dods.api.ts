@@ -4,8 +4,9 @@ import type { QueryParams } from "../types/common";
 export type ListDodsQuery = QueryParams & {
   page?: number;
   page_size?: number;
+  language?: string;
+  line_number?: string;
   extn?: string;
-  hpack?: boolean;
 };
 
 export interface DOD {
@@ -14,7 +15,7 @@ export interface DOD {
   name?: string;
   type: string;
   line_number: string;
-  extn: string;
+  numbers: string;
   dod_id?: string;
 }
 
@@ -24,6 +25,10 @@ export interface ListDodsResponse {
   pageCount: number;
   rowCount: number;
   hpack: boolean;
+}
+
+export interface ImportDodsRequest {
+  dods: any[];
 }
 
 export function createDodsApi(client: ApiClient) {
@@ -63,6 +68,22 @@ export function createDodsApi(client: ApiClient) {
       return client.request<{ success: boolean }>({
         method: "DELETE",
         path: `/api/dods/${encodeURIComponent(id)}`,
+      });
+    },
+
+    upload(data: ImportDodsRequest) {
+      return client.request<{ data: DOD[] }>({
+        method: "POST",
+        path: "/api/dods/import",
+        body: data,
+      });
+    },
+
+    download(params?: { language?: string }) {
+      return client.request<any[]>({
+        method: "GET",
+        path: "/api/dods/download",
+        query: params,
       });
     },
   };

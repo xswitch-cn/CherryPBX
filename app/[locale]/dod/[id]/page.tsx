@@ -19,6 +19,7 @@ export default function DodDetailPage() {
   const params = useParams<{ id: string; locale: string }>();
   const dodId = params.id;
   const t = useTranslations("dod");
+  const tt = useTranslations("pages");
   const ttt = useTranslations("common");
 
   const [dod, setDod] = useState<DOD | null>(null);
@@ -199,7 +200,7 @@ export default function DodDetailPage() {
       <SidebarProvider>
         <AppSidebar variant="inset" />
         <SidebarInset>
-          <SiteHeader title={t("dod")} />
+          <SiteHeader title={tt("dod")} />
           <div className="flex flex-1 flex-col items-center justify-center">
             <div className="text-center">加载中...</div>
           </div>
@@ -213,7 +214,7 @@ export default function DodDetailPage() {
       <SidebarProvider>
         <AppSidebar variant="inset" />
         <SidebarInset>
-          <SiteHeader title={t("dod")} />
+          <SiteHeader title={tt("dod")} />
           <div className="flex flex-1 flex-col items-center justify-center">
             <div className="text-center">DOD 不存在</div>
           </div>
@@ -226,15 +227,14 @@ export default function DodDetailPage() {
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader title={t("dod")} />
+        <SiteHeader title={tt("dod")} />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
                 <CommonBreadcrumb
                   items={[
-                    { label: t("call"), href: `/${params.locale}/dashboard` },
-                    { label: t("dod"), href: `/${params.locale}/dod` },
+                    { label: tt("dod"), href: `/${params.locale}/dod` },
                     { label: dod.line_number, isCurrentPage: true },
                   ]}
                 />
@@ -263,12 +263,11 @@ export default function DodDetailPage() {
                     value={dod.line_number}
                     type="text"
                     inputPlaceholder={t("lineNumberPlaceholder") || "请输入线路号码"}
-                    required
                   />
                   <EditableField
                     label={t("extension") || "分机"}
-                    name="numbers"
-                    value={dod.numbers}
+                    name="extn"
+                    value={dod.extn}
                     type="select"
                     options={extensions.map((ext) => ({
                       value: ext.extn,
@@ -283,9 +282,8 @@ export default function DodDetailPage() {
                     type="select"
                     options={resourceTypes.map((item: any) => ({
                       value: item.k,
-                      label: t(item.v.toLowerCase()) || item.v,
+                      label: t(item.v) || item.v,
                     }))}
-                    required
                     onChange={(value) => {
                       handleTypeChange(value);
                     }}
@@ -293,14 +291,13 @@ export default function DodDetailPage() {
                   <EditableField
                     label={t("resourceName") + " (DOD)"}
                     name="ref_id"
-                    value={dod.ref_id?.toString() || ""}
+                    value={dod.name || ""}
                     type="select"
                     options={getResourceOptions()}
-                    required
                     disabled={!selectedType}
                   />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <EditableField
                       label={t("name") || "名称"}
                       name="name"
@@ -308,7 +305,7 @@ export default function DodDetailPage() {
                       type="text"
                       inputPlaceholder={t("namePlaceholder") || "请输入名称"}
                     />
-                  </div>
+                  </div> */}
                 </EditableSection>
               </div>
             </div>

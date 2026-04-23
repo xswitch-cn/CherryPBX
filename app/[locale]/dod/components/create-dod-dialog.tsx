@@ -81,6 +81,21 @@ export function CreateDodDialog({
     void loadExtensions();
   }, []);
 
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        line_number: "",
+        extn: "",
+        type: "",
+        ref_id: "",
+      });
+      setSelectedType("");
+      setGateways([]);
+      setTrunks([]);
+      setDistributors([]);
+    }
+  }, [open, form]);
+
   const handleTypeChange = (type: string) => {
     setSelectedType(type);
     form.resetField("ref_id");

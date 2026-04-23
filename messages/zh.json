@@ -955,8 +955,8 @@
     "Extension": "分机",
     "Line Number": "线路号码",
     "GATEWAY": "网关",
-    "TRUNK": "中继",
-    "DISTRIBUTOR": "分配器",
+    "TRUNKS": "中继",
+    "DISTRIBUTORS": "分配器",
     "nameList": "资源名列表",
     "nameListPlaceholder": "请输入资源名列表",
     "dodInfo": "DOD信息"

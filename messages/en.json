@@ -1005,8 +1005,8 @@
     "GATEWAY": "Gateway",
     "type": "Type",
     "typePlaceholder": "Enter type",
-    "TRUNK": "Trunk",
-    "DISTRIBUTOR": "Distributor",
+    "TRUNKS": "Trunks",
+    "DISTRIBUTORS": "Distributors",
     "nameList": "Resource Name List",
     "nameListPlaceholder": "Enter resource name list",
     "dodInfo": "DOD Information"

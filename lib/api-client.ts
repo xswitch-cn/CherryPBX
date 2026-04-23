@@ -11,6 +11,7 @@ import {
   createContextsApi,
   createBlacklistsApi,
   createConferencesApi,
+  createSipApi,
   type Route,
   type ListRoutesQuery,
   type ListRoutesResponse,
@@ -105,6 +106,7 @@ export const licenseApi = createLicenseApi(apiClient);
 export const contextsApi = createContextsApi(apiClient);
 export const blacklistsApi = createBlacklistsApi(apiClient);
 export const conferencesApi = createConferencesApi(apiClient);
+export const sipApi = createSipApi(apiClient);
 
 // 导出常用类型
 export type {

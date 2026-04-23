@@ -166,7 +166,6 @@
     "context": "呼叫源",
     "cancel": "取消",
     "confirm": "确认",
-    "pageInfo": "第 {current} 页 / 共 {total} 页",
     "perPage": "条/页",
     "columns": "列",
     "viewProfile": "查看资料",
@@ -1084,7 +1083,9 @@
   },
   "sip": {
     "addSip": "添加SIP设置",
+    "deleteSip": "删除SIP",
     "settingName": "设置名称",
+    "name": "名称",
     "value": "值",
     "description": "描述",
     "category": "分类",
@@ -1094,7 +1095,8 @@
     "searchSip": "搜索SIP设置...",
     "noSip": "未找到SIP设置。",
     "editingSetting": "正在编辑设置：{name}",
-    "deletedSetting": "已删除设置：{name}"
+    "deletedSetting": "已删除设置：{name}",
+    "Data": "数据地址"
   },
   "license": {
     "createLicense": "创建许可证",
@@ -1409,6 +1411,7 @@
     "export":"导出",
     "Import Success": "导入成功",
     "uploadSuccess": "上传成功",
-    "uploadFailed": "上传失败"
+    "uploadFailed": "上传失败",
+    "control": "控制"
     }
 }

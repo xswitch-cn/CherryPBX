@@ -103,7 +103,7 @@ export default function LicensePage() {
   );
 
   // 删除数据
-  const handleDeleteGateway = useCallback(async () => {
+  const handleDeleteLicense = useCallback(async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
@@ -177,7 +177,7 @@ export default function LicensePage() {
             onOpenChange={setIsDeleteDialogOpen}
             title={tl("deleteLicense")}
             description={tc("DeleteItem", { item: deleteTarget?.name ? deleteTarget?.name : "" })}
-            onSubmit={handleDeleteGateway}
+            onSubmit={handleDeleteLicense}
             deleteText={tc("confirm") || "确定"}
             cancelText={tc("cancel") || "取消"}
             isLoading={isDeleting}

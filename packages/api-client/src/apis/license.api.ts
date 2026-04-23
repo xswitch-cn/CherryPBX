@@ -151,5 +151,39 @@ export function createLicenseApi(client: ApiClient) {
         body: data,
       });
     },
+
+    /**
+     * 创建 JSON 文件
+     */
+    createJson(licenseId: string) {
+      return client.request<{ success: boolean; message?: string }>({
+        method: "GET",
+        path: `/api/licenses/${licenseId}/createjson`,
+      });
+    },
+
+    /**
+     * 上传许可证文件
+     */
+    uploadLicense(formData: FormData) {
+      return client.request<{ success: boolean; message?: string }>({
+        method: "POST",
+        path: "/api/licenses/upload",
+        body: formData,
+        headers: {
+          // 注意：使用 FormData 时不要设置 Content-Type，浏览器会自动设置
+        },
+      });
+    },
+
+    /**
+     * 应用新许可证
+     */
+    applyNewLicense() {
+      return client.request({
+        method: "POST",
+        path: "/jsapi/xswitch_license",
+      });
+    },
   };
 }

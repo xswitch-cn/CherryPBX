@@ -36,6 +36,7 @@ export { createLicenseApi } from "./apis/license.api";
 export { createContextsApi } from "./apis/contexts.api";
 export { createBlacklistsApi } from "./apis/blacklists.api";
 export { createConferencesApi } from "./apis/conferences.api";
+export { createSipApi } from "./apis/sip.api";
 
 export type { ListUsersQuery, ListUsersResponse, UsersApi } from "./apis/users.api";
 export type {
@@ -88,6 +89,7 @@ export type {
 } from "./apis/gateways.api";
 
 export type { License, ListLicenseQuery, CreateLicenseRequest } from "./apis/license.api";
+export type { Sip, ListSipQuery } from "./apis/sip.api";
 
 export type {
   LoginParams,

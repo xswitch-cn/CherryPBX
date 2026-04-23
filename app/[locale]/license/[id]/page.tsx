@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback, useEffect, useMemo } from "react";
+import { use, useState, useCallback, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
@@ -9,13 +9,15 @@ import { CommonBreadcrumb } from "@/components/ui/common-breadcrumb";
 import { type License } from "@repo/api-client";
 import { licenseApi } from "@/lib/api-client";
 import { toast } from "sonner";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, DownloadIcon, UploadIcon, RefreshCwIcon } from "lucide-react";
+import Link from "next/link";
 import { EditableSection, EditableField } from "@/components/ui/editable-section";
 import { Button } from "@/components/ui/button";
 import { EditableTable } from "@/components/ui/editable-table";
 import { AddLicenseModuleDialog } from "../components/add-license-module-dialog";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { mediaFilesApi } from "@/lib/api-client";
 
 interface LicenseDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +38,7 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteRealm, setDeleteRealm] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadLicenseDetail = useCallback(async () => {
     try {
@@ -128,18 +131,109 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
     }
   };
 
+  // Create JSON - 创建并下载 JSON 文件
+  const handleCreateJSON = async () => {
+    if (!license) return;
+
+    try {
+      // 调用 API 创建 JSON
+      await licenseApi.createJson(licenseId);
+
+      // 查询媒体文件
+      const response = await mediaFilesApi.list({ name: license.name });
+      const filteredData = response.data.data?.filter(
+        (item: any) => item.name === `${license.name}.${item.ext}`,
+      );
+
+      if (filteredData && filteredData.length === 1) {
+        const fileId = filteredData[0].id;
+        const ext = filteredData[0].ext;
+        const src = `/api/media_files/${fileId}.${ext}`;
+
+        // 触发下载
+        const downloadLink = document.createElement("a");
+        downloadLink.href = src;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      }
+    } catch (error) {
+      console.error("Failed to create JSON:", error);
+    }
+  };
+
+  // Upload License File - 上传许可证文件
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("license_id", licenseId);
+
+      await licenseApi.uploadLicense(formData);
+
+      toast.success(tc("uploadSuccess"));
+      await loadLicenseDetail();
+    } catch (error) {
+      console.error("Failed to upload license:", error);
+      toast.error(tc("uploadFailed"));
+    } finally {
+      // 重置 input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Apply New License - 应用新许可证
+  const handleApplyNewLicense = async () => {
+    try {
+      // 发送 sighup 信号重新加载配置
+      await licenseApi.applyNewLicense();
+
+      toast.success(tl("applySuccess") || "Successfull applied new license");
+
+      // 重新加载许可证信息
+      await loadLicenseDetail();
+    } catch (error) {
+      console.error("Failed to apply license:", error);
+      toast.error(tl("applyFailed") || "应用许可证失败");
+    }
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader title={t("license")} />
-        <div className="px-4 lg:px-6 py-4 md:py-6 flex flex-col gap-4">
+        <div className="px-4 lg:px-6 py-4 md:py-6 flex flex-col">
           <CommonBreadcrumb
             items={[
               { label: t("license"), href: "/license" },
               { label: license?.name, isCurrentPage: true },
             ]}
           />
+          <div className="flex items-center justify-between">
+            <div />
+            <div className="flex items-center gap-2">
+              <Link href="/api/license/req">
+                <Button variant="outline" size="sm">
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  {tl("Download Fingerprint")}
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm" onClick={() => void handleCreateJSON()}>
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                {tl("Create JSON")}
+              </Button>
+            </div>
+          </div>
           <EditableSection
             title="基本信息"
             defaultValues={{
@@ -166,12 +260,30 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
             />
             <EditableField label={tc("createdAt")} value={license?.created_at} />
           </EditableSection>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-8">
             <div />
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-              <PlusIcon className="mr-2 h-4 w-4" />
-              {tc("add")}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                {tc("add")}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() =>  handleUploadClick()}>
+                <UploadIcon className="mr-2 h-4 w-4" />
+                {tl("Upload License File")}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => void handleApplyNewLicense()}>
+                <RefreshCwIcon className="mr-2 h-4 w-4" />
+                {tl("Apply New License")}
+              </Button>
+            </div>
+            {/* 隐藏的文件输入 */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".lic,.license,.json"
+              onChange={(e) => void handleFileUpload(e)}
+              style={{ display: "none" }}
+            />
           </div>
 
           <CollapsibleSection

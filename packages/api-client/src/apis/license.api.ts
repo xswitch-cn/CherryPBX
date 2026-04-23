@@ -100,6 +100,37 @@ export function createLicenseApi(client: ApiClient) {
     },
 
     /**
+     * 获取参数
+     */
+    getParams(id: string) {
+      return client.request<any>({
+        method: "GET",
+        path: `/api/licenses/${id}/params`,
+      });
+    },
+
+    /**
+     * 编辑参数
+     */
+    upParams(id: string, data: Record<string, any>) {
+      return client.request<any>({
+        method: "PUT",
+        path: `/api/licenses/${id}/params/${data.id}`,
+        body: { v: data.v },
+      });
+    },
+
+    /**
+     * 删除参数
+     */
+    delParams(realm: string, id: string) {
+      return client.request<any>({
+        method: "DELETE",
+        path: `/api/licenses/${realm}/${id}`,
+      });
+    },
+
+    /**
      * 编辑数据
      */
     update(id: string, data: License) {

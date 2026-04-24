@@ -55,10 +55,12 @@ export const numberTransformSchema = z.object({
 
 export function NumberTransformTable({
   data: initialData,
+  onDelete,
   onDataChange,
 }: {
   data: z.infer<typeof numberTransformSchema>[];
   danger?: boolean;
+  onDelete?: (rule: z.infer<typeof numberTransformSchema>) => void;
   onDataChange?: () => void;
 }) {
   const t = useTranslations("numberTransform");
@@ -117,31 +119,7 @@ export function NumberTransformTable({
                 {tt("details")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => {
-                  void (async () => {
-                    try {
-                      const response = (await numberTransformApi.delete(row.original.id)) as any;
-                      if (response?.data?.success || response?.data?.message == "success") {
-                        toast.success(t("deleteSuccess") || "删除成功");
-                        if (onDataChange) {
-                          onDataChange();
-                        }
-                      } else {
-                        toast.error(
-                          `${t("deleteError") || "删除错误"}: ${response?.data?.message || "未知错误"}`,
-                        );
-                      }
-                    } catch (error: any) {
-                      console.error("Failed to delete number transform:", error);
-                      toast.error(
-                        `${t("deleteError") || "删除错误"}: ${error?.message || error?.text || error}`,
-                      );
-                    }
-                  })();
-                }}
-              >
+              <DropdownMenuItem variant="destructive" onClick={() => onDelete?.(row.original)}>
                 {tt("delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>

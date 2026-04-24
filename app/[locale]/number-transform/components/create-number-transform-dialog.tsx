@@ -50,6 +50,7 @@ export function CreateNumberTransformDialog({
 }) {
   const t = useTranslations("numberTransform");
   const tt = useTranslations("common");
+  const ttt = useTranslations("table");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -157,7 +158,7 @@ export function CreateNumberTransformDialog({
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting
-                  ? tt("submitting") || "提交中..."
+                  ? ttt("submitting") || "提交中..."
                   : tt("submit") || "提交"}
               </Button>
             </DialogFooter>

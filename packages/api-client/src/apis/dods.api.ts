@@ -15,7 +15,7 @@ export interface DOD {
   name?: string;
   type: string;
   line_number: string;
-  numbers: string;
+  extn: string;
   dod_id?: string;
 }
 

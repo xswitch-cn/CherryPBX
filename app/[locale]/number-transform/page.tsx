@@ -1,63 +1,72 @@
 "use client";
 
-import { useEffect } from "react";
+import * as React from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/navigation";
+import { useParams } from "next/navigation";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
 import { SiteHeader } from "@/app/[locale]/dashboard/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { NumberTransformTable } from "./components/number-transform-table";
+import { CreateNumberTransformDialog } from "./components/create-number-transform-dialog";
+import { Button } from "@/components/ui/button";
 
-const mockNumberTransformData = [
-  {
-    id: 1,
-    ruleName: "去掉区号",
-    matchPattern: "^0(\\d+)$",
-    replaceWith: "$1",
-    direction: "Outbound",
-    status: "Active",
-  },
-  {
-    id: 2,
-    ruleName: "添加区号",
-    matchPattern: "^(\\d{8})$",
-    replaceWith: "010$1",
-    direction: "Inbound",
-    status: "Active",
-  },
-  {
-    id: 3,
-    ruleName: "隐藏中间四位",
-    matchPattern: "^(\\d{3})\\d{4}(\\d{4})$",
-    replaceWith: "$1****$2",
-    direction: "Both",
-    status: "Active",
-  },
-  {
-    id: 4,
-    ruleName: "国际号码转换",
-    matchPattern: "^00(\\d+)$",
-    replaceWith: "+$1",
-    direction: "Outbound",
-    status: "Active",
-  },
-  {
-    id: 5,
-    ruleName: "手机号加0",
-    matchPattern: "^(1\\d{10})$",
-    replaceWith: "0$1",
-    direction: "Inbound",
-    status: "Inactive",
-  },
-];
+import { PlusIcon } from "lucide-react";
+import { toast } from "sonner";
+import {
+  numberTransformApi,
+  type NumberTransform,
+  type ListNumberTransformsQuery,
+} from "@/lib/api-client";
+
+const DEFAULT_PAGE_SIZE = 10;
 
 export default function NumberTransformPage() {
   const router = useRouter();
   const t = useTranslations("pages");
+  const tt = useTranslations("numberTransform");
+
+  const [numberTransforms, setNumberTransforms] = useState<NumberTransform[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [danger, setDanger] = useState(false);
+
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) router.push("/login");
   }, [router]);
+
+  const loadNumberTransforms = useCallback(async () => {
+    try {
+      const queryParams: ListNumberTransformsQuery = {
+        page: currentPage,
+        page_size: pageSize,
+      };
+
+      const response = await numberTransformApi.list(queryParams);
+      const responseData = response.data;
+      setNumberTransforms(responseData.data || []);
+    } catch (error) {
+      console.error("Failed to load number transforms:", error);
+      toast.error(tt("failedToLoad") || "加载失败");
+    }
+  }, [currentPage, pageSize, tt]);
+
+  useEffect(() => {
+    void loadNumberTransforms();
+  }, [loadNumberTransforms]);
+
+  const toggleDanger = () => {
+    setDanger(!danger);
+  };
+
+  const handleDataChange = useCallback(() => {
+    void loadNumberTransforms();
+  }, [loadNumberTransforms]);
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
@@ -67,12 +76,30 @@ export default function NumberTransformPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <NumberTransformTable data={mockNumberTransformData} />
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                      <PlusIcon className="mr-2 h-4 w-4" />
+                      {tt("new")}
+                    </Button>
+                  </div>
+                  <NumberTransformTable
+                    data={numberTransforms}
+                    danger={danger}
+                    onDataChange={handleDataChange}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </SidebarInset>
+
+      <CreateNumberTransformDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onDataChange={handleDataChange}
+      />
     </SidebarProvider>
   );
 }

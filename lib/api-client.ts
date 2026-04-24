@@ -31,6 +31,7 @@ import {
   createDodsApi,
   createHotlinesApi,
   createMediaFilesApi,
+  createNumberTransformApi,
   type Hotline,
   type DOD,
   type ListHotlinesResponse,
@@ -53,6 +54,13 @@ import {
   type ConferencesApi,
   type ConferenceProfile,
   type UserItem,
+  type NumberTransform,
+  type NtsNmbers,
+  type NtsNmbersInfo,
+  type ListNumberTransformsQuery,
+  type ListNumberTransformsResponse,
+  type NumberTransformsApi,
+  type NumberTransformItem,
 } from "@repo/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 
@@ -107,6 +115,7 @@ export const contextsApi = createContextsApi(apiClient);
 export const blacklistsApi = createBlacklistsApi(apiClient);
 export const conferencesApi = createConferencesApi(apiClient);
 export const sipApi = createSipApi(apiClient);
+export const numberTransformApi = createNumberTransformApi(apiClient);
 
 // 导出常用类型
 export type {
@@ -148,4 +157,11 @@ export type {
   ConferencesApi,
   ConferenceProfile,
   UserItem,
+  NumberTransform,
+  NtsNmbers,
+  NtsNmbersInfo,
+  ListNumberTransformsQuery,
+  ListNumberTransformsResponse,
+  NumberTransformsApi,
+  NumberTransformItem,
 };

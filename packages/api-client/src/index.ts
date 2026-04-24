@@ -78,6 +78,17 @@ export type { ListDodsQuery, ListDodsResponse, DOD } from "./apis/dods.api";
 export { createHotlinesApi } from "./apis/hotlines.api";
 export type { ListHotlinesQuery } from "./apis/hotlines.api";
 export type { Hotline, ListHotlinesResponse } from "./apis/hotlines.api";
+
+export { createNumberTransformApi } from "./apis/number-transform.api";
+export type {
+  ListNumberTransformsQuery,
+  ListNumberTransformsResponse,
+  NumberTransform,
+  NtsNmbers,
+  NtsNmbersInfo,
+  NumberTransformsApi,
+  NumberTransformItem,
+} from "./apis/number-transform.api";
 export type { MediaFile, ListMediaFilesQuery, ListMediaFilesResponse } from "./apis/mediafiles.api";
 
 export type {

@@ -32,6 +32,7 @@ import {
   createHotlinesApi,
   createMediaFilesApi,
   createNumberTransformApi,
+  createTimeRulesApi,
   type Hotline,
   type DOD,
   type ListHotlinesResponse,
@@ -61,6 +62,11 @@ import {
   type ListNumberTransformsResponse,
   type NumberTransformsApi,
   type NumberTransformItem,
+  type TimeRule,
+  type ListTimeRulesQuery,
+  type ListTimeRulesResponse,
+  type TimeRulesApi,
+  type TimeResponse,
 } from "@repo/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 
@@ -116,6 +122,7 @@ export const blacklistsApi = createBlacklistsApi(apiClient);
 export const conferencesApi = createConferencesApi(apiClient);
 export const sipApi = createSipApi(apiClient);
 export const numberTransformApi = createNumberTransformApi(apiClient);
+export const timeRulesApi = createTimeRulesApi(apiClient);
 
 // 导出常用类型
 export type {
@@ -164,4 +171,9 @@ export type {
   ListNumberTransformsResponse,
   NumberTransformsApi,
   NumberTransformItem,
+  TimeRule,
+  ListTimeRulesQuery,
+  ListTimeRulesResponse,
+  TimeRulesApi,
+  TimeResponse,
 };

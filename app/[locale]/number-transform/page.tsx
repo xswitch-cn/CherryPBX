@@ -4,13 +4,13 @@ import * as React from "react";
 import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/navigation";
-import { useParams } from "next/navigation";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
 import { SiteHeader } from "@/app/[locale]/dashboard/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { NumberTransformTable } from "./components/number-transform-table";
 import { CreateNumberTransformDialog } from "./components/create-number-transform-dialog";
 import { Button } from "@/components/ui/button";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 
 import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -28,11 +28,14 @@ export default function NumberTransformPage() {
   const tt = useTranslations("numberTransform");
 
   const [numberTransforms, setNumberTransforms] = useState<NumberTransform[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [danger, setDanger] = useState(false);
+  const [currentPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [danger] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<NumberTransform | null>(null);
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -51,7 +54,7 @@ export default function NumberTransformPage() {
       setNumberTransforms(responseData.data || []);
     } catch (error) {
       console.error("Failed to load number transforms:", error);
-      toast.error(tt("failedToLoad") || "加载失败");
+      toast.error(tt("failedToLoad"));
     }
   }, [currentPage, pageSize, tt]);
 
@@ -59,13 +62,30 @@ export default function NumberTransformPage() {
     void loadNumberTransforms();
   }, [loadNumberTransforms]);
 
-  const toggleDanger = () => {
-    setDanger(!danger);
-  };
-
   const handleDataChange = useCallback(() => {
     void loadNumberTransforms();
   }, [loadNumberTransforms]);
+
+  const handleDelete = useCallback((rule: NumberTransform) => {
+    setDeleteTarget(rule);
+    setIsDeleteDialogOpen(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await numberTransformApi.delete(deleteTarget.id);
+      toast.success("删除成功");
+      await loadNumberTransforms();
+    } catch (error: any) {
+      console.error("Failed to delete number transform:", error);
+      toast.error(`删除失败: ${error?.message || error?.text || error}`);
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  }, [deleteTarget, loadNumberTransforms]);
 
   return (
     <SidebarProvider>
@@ -86,6 +106,7 @@ export default function NumberTransformPage() {
                   <NumberTransformTable
                     data={numberTransforms}
                     danger={danger}
+                    onDelete={handleDelete}
                     onDataChange={handleDataChange}
                   />
                 </div>
@@ -99,6 +120,14 @@ export default function NumberTransformPage() {
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onDataChange={handleDataChange}
+      />
+      <DeleteConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="删除规则"
+        description={`确定要删除规则 "${deleteTarget?.name}" 吗？`}
+        onSubmit={handleConfirmDelete}
+        isLoading={isDeleting}
       />
     </SidebarProvider>
   );

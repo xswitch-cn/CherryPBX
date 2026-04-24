@@ -89,6 +89,15 @@ export type {
   NumberTransformsApi,
   NumberTransformItem,
 } from "./apis/number-transform.api";
+
+export { createTimeRulesApi } from "./apis/time-rules.api";
+export type {
+  ListTimeRulesQuery,
+  ListTimeRulesResponse,
+  TimeRule,
+  TimeRulesApi,
+  TimeResponse,
+} from "./apis/time-rules.api";
 export type { MediaFile, ListMediaFilesQuery, ListMediaFilesResponse } from "./apis/mediafiles.api";
 
 export type {

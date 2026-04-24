@@ -1082,7 +1082,8 @@
     "CONF_CP_NO_CHECK": "允许任何人呼入"
   },
   "sip": {
-    "addSip": "添加SIP设置",
+    "addSip": "添加SIP",
+    "createSip": "创建SIP配置",
     "deleteSip": "删除SIP",
     "settingName": "设置名称",
     "name": "名称",

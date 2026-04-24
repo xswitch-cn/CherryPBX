@@ -89,7 +89,7 @@ export type {
 } from "./apis/gateways.api";
 
 export type { License, ListLicenseQuery, CreateLicenseRequest } from "./apis/license.api";
-export type { Sip, ListSipQuery } from "./apis/sip.api";
+export type { Sip, ListSipQuery, CreateSipRequest } from "./apis/sip.api";
 
 export type {
   LoginParams,

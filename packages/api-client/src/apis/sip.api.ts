@@ -35,6 +35,15 @@ export type ListSipQuery = QueryParams & {
 };
 
 /**
+ * 创建 SIP Profile 请求
+ */
+export interface CreateSipRequest {
+  name: string;
+  description?: string;
+  template?: string;
+}
+
+/**
  * Sip 相关 API 接口
  */
 export function createSipApi(client: ApiClient) {
@@ -46,6 +55,17 @@ export function createSipApi(client: ApiClient) {
       return client.request<Sip[]>({
         method: "GET",
         path: "/api/sip_profiles",
+      });
+    },
+
+    /**
+     * 创建 SIP Profile
+     */
+    create(data: CreateSipRequest) {
+      return client.request<{ success: boolean; data?: number; message?: string }>({
+        method: "POST",
+        path: "/api/sip_profiles",
+        body: data,
       });
     },
   };

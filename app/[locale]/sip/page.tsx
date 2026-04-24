@@ -6,13 +6,14 @@ import { useRouter } from "@/navigation";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
 import { SiteHeader } from "@/app/[locale]/dashboard/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-// import { PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { ListTable } from "@/components/ui/list-components";
-// import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { sipApi } from "@/lib/api-client";
-import { type Sip } from "@repo/api-client";
+import { type Sip, type CreateSipRequest } from "@repo/api-client";
 import { toast } from "sonner";
 // import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { CreateSipDialog } from "./components/create-sip-dialog";
 import { createSipColumns } from "./sip-columns";
 
 export default function SipPage() {
@@ -23,7 +24,7 @@ export default function SipPage() {
 
   const [sips, setSips] = useState<Sip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   // const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   // const [deleteTarget, setDeleteTarget] = useState<Sip | null>(null);
   // const [isDeleting, setIsDeleting] = useState(false);
@@ -79,20 +80,20 @@ export default function SipPage() {
   //   }
   // }, [deleteTarget, loadSips, tc]);
 
-  // const handleCreatesip = useCallback(
-  //   async (_data) => {
-  //     try {
-  //       await sipApi.create(_data);
-  //       toast.success(tc("createSuccess"));
-  //       await loadSips();
-  //       setIsCreateDialogOpen(false);
-  //     } catch (error) {
-  //       console.error("Failed to create sip:", error);
-  //       toast.error(tc("createFailed"));
-  //     }
-  //   },
-  //   [loadSips, tc],
-  // );
+  const handleCreatesip = useCallback(
+    async (_data: CreateSipRequest) => {
+      try {
+        await sipApi.create(_data);
+        toast.success(tc("createSuccess"));
+        await loadSips();
+        setIsCreateDialogOpen(false);
+      } catch (error) {
+        console.error("Failed to create sip:", error);
+        toast.error(tc("createFailed"));
+      }
+    },
+    [loadSips, tc],
+  );
 
   return (
     <SidebarProvider>
@@ -102,10 +103,10 @@ export default function SipPage() {
         <div className="px-4 lg:px-6 py-4 md:py-6 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div />
-            {/* <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+            <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
               <PlusIcon className="mr-2 h-4 w-4" />
               {ts("addSip")}
-            </Button> */}
+            </Button>
           </div>
 
           {/* 表格 */}
@@ -116,6 +117,14 @@ export default function SipPage() {
             emptyText={tc("noData") || "暂无数据"}
             loadingText={tc("loading") || "加载中..."}
             translationPrefix="table"
+          />
+
+          {/* 新增 */}
+          <CreateSipDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            onSubmit={handleCreatesip}
+            sips={sips}
           />
 
           {/* 删除确认对话框 */}

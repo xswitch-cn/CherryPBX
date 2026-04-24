@@ -61,7 +61,7 @@ export interface FieldConfig {
   // select 类型的选项
   options?: Array<{ value: string; label: string }>;
   // radio 类型的选项
-  radioOptions?: Array<{ value: string; label: string }>;
+  radioOptions?: Array<{ value: string | number; label: string }>;
   // 验证规则
   validation?: {
     min?: number;
@@ -128,7 +128,14 @@ export const buildZodSchema = (fields: FieldConfig[], t: (key: string) => string
 
     switch (field.type) {
       case "number":
-        fieldSchema = z.string().min(1, `${field.label}${t("required")}`);
+        fieldSchema = z.union([z.number(), z.string()]).transform((val) => {
+          if (typeof val === "number") return val;
+          if (typeof val === "string" && val !== "") {
+            const num = Number(val);
+            return isNaN(num) ? val : num;
+          }
+          return val;
+        });
         break;
       case "date":
         fieldSchema = z.date().refine((val) => val !== undefined, {
@@ -145,16 +152,38 @@ export const buildZodSchema = (fields: FieldConfig[], t: (key: string) => string
 
     // 添加必填验证
     if (field.required && field.type !== "date") {
-      try {
-        // 尝试作为字符串类型处理
-        const errorMessage =
-          field.type === "select"
-            ? `${field.label}${t("options")}`
-            : `${field.label}${t("required")}`;
-        fieldSchema = (fieldSchema as z.ZodString).min(1, errorMessage);
-      } catch {
-        // 如果不是字符串类型，保持原样
-        console.warn(`无法为字段 ${field.name} 应用 min 验证`);
+      if (field.type === "number") {
+        // number 类型的必填验证
+        fieldSchema = z
+          .union([z.number(), z.string()])
+          .refine(
+            (val) => {
+              if (typeof val === "number") return true;
+              if (typeof val === "string") return val !== "";
+              return false;
+            },
+            { message: `${field.label}${t("required")}` },
+          )
+          .transform((val) => {
+            if (typeof val === "number") return val;
+            if (typeof val === "string" && val !== "") {
+              const num = Number(val);
+              return isNaN(num) ? val : num;
+            }
+            return val;
+          });
+      } else {
+        try {
+          // 尝试作为字符串类型处理
+          const errorMessage =
+            field.type === "select"
+              ? `${field.label}${t("options")}`
+              : `${field.label}${t("required")}`;
+          fieldSchema = (fieldSchema as z.ZodString).min(1, errorMessage);
+        } catch {
+          // 如果不是字符串类型，保持原样
+          console.warn(`无法为字段 ${field.name} 应用 min 验证`);
+        }
       }
     }
 
@@ -246,7 +275,7 @@ const FormFieldRenderer = ({
                       field.onChange(value);
                     }
                   }}
-                  value={formField.value}
+                  value={formField.value !== undefined ? String(formField.value) : undefined}
                   disabled={field.disabled}
                 >
                   <FormControl>
@@ -256,7 +285,7 @@ const FormFieldRenderer = ({
                   </FormControl>
                   <SelectContent>
                     {field.options?.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem key={option.value} value={String(option.value)}>
                         {option.label}
                       </SelectItem>
                     ))}
@@ -362,6 +391,16 @@ const FormFieldRenderer = ({
                     {...formField}
                     value={formField.value ?? ""}
                     type="number"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // 如果值为空，设置为空字符串；否则尝试转换为数字
+                      if (value === "") {
+                        formField.onChange("");
+                      } else {
+                        const num = Number(value);
+                        formField.onChange(isNaN(num) ? value : num);
+                      }
+                    }}
                   />
                 </FormControl>
                 {field.description && <FormDescription>{field.description}</FormDescription>}
@@ -458,7 +497,7 @@ const FormFieldRenderer = ({
                 </FormLabel>
                 <FormControl>
                   <RadioGroup
-                    value={formField.value}
+                    value={formField.value !== undefined ? String(formField.value) : undefined}
                     onValueChange={(value) => {
                       formField.onChange(value);
                       if (field.onChange) {
@@ -470,7 +509,10 @@ const FormFieldRenderer = ({
                   >
                     {field.radioOptions?.map((option) => (
                       <div key={option.value} className="flex items-center gap-2">
-                        <RadioGroupItem value={option.value} id={`${field.name}-${option.value}`} />
+                        <RadioGroupItem
+                          value={String(option.value)}
+                          id={`${field.name}-${option.value}`}
+                        />
                         <label
                           htmlFor={`${field.name}-${option.value}`}
                           className="text-sm cursor-pointer"
@@ -570,9 +612,15 @@ export function DynamicFormDialog({
     const newDefaultValues: Record<string, any> = {};
 
     config.fields.forEach((field) => {
-      // 如果字段已经有值，保留它
-      if (currentValues[field.name] !== undefined && currentValues[field.name] !== "") {
-        newDefaultValues[field.name] = currentValues[field.name];
+      const currentValue = currentValues[field.name];
+      // 检查当前值是否有效（对于 number 类型，0 也是有效值）
+      const hasValidValue =
+        currentValue !== undefined &&
+        (field.type === "number" ? currentValue !== "" : currentValue !== "");
+
+      if (hasValidValue) {
+        // 如果字段已经有值，保留它
+        newDefaultValues[field.name] = currentValue;
       } else if (field.defaultValue !== undefined) {
         // 否则使用字段的 defaultValue
         newDefaultValues[field.name] = field.defaultValue;
@@ -605,6 +653,7 @@ export function DynamicFormDialog({
     } catch (error) {
       console.error("Form submission error:", error);
       // Don't close the dialog if there's an error
+      // Error toast should be shown in the onSubmit handler
     }
   };
 

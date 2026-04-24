@@ -31,6 +31,7 @@ export default function SipPage() {
   const [deleteTarget, setDeleteTarget] = useState<Sip | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [sipParams, setSipParams] = useState<any[]>([]);
+  const [type, setType] = useState<string>("");
 
   const sipColumns = createSipColumns({
     t,
@@ -61,7 +62,6 @@ export default function SipPage() {
       setIsLoading(false);
     }
   }, [tc]);
-  console.log(sipParams, "///.......sipParams");
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -90,19 +90,38 @@ export default function SipPage() {
   const handleCreatesip = useCallback(
     async (_data: CreateSipRequest) => {
       try {
-        await sipApi.create(_data);
+        if (type === "param") {
+          await sipApi.createParam({ ..._data, realm: "SOFIAGLOBALS" });
+        } else {
+          await sipApi.create(_data);
+        }
         toast.success(tc("createSuccess"));
         await loadSips();
-        setIsCreateDialogOpen(false);
       } catch (error) {
-        console.error("Failed to create sip:", error);
-        toast.error(tc("createFailed"));
+        throw error;
       }
     },
-    [loadSips, tc],
+    [loadSips, tc, type],
   );
 
-  const handleVariableChange = async (key: string, rowData: any) => {};
+  const handleVariableChange = async (key: string, rowData: any) => {
+    try {
+      await sipApi.editParams(
+        key === "disabled"
+          ? { action: "toggle", id: rowData.id }
+          : {
+              id: rowData.id,
+              k: rowData.k,
+              v: rowData.v,
+            },
+      );
+      toast.success(tc("saveSuccess"));
+      await loadSips();
+    } catch (error) {
+      console.error("Failed to update variable:", error);
+      toast.error(tc("saveFailed"));
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -112,7 +131,13 @@ export default function SipPage() {
         <div className="px-4 lg:px-6 py-4 md:py-6 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div />
-            <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setType("sip");
+                setIsCreateDialogOpen(true);
+              }}
+            >
               <PlusIcon className="mr-2 h-4 w-4" />
               {ts("addSip")}
             </Button>
@@ -131,30 +156,49 @@ export default function SipPage() {
           <CollapsibleSection
             title={ts("SIP Global Params")}
             renderContent={() => (
-              <EditableTable
-                columns={[
-                  { key: "k", header: "名称" },
-                  { key: "v", header: "值", type: "text" },
-                  { key: "disabled", header: "启用", type: "switch" },
-                  {
-                    key: "action",
-                    header: tc("actions"),
-                    type: "action",
-                    actions: [
-                      {
-                        type: "delete",
-                        label: tc("delete"),
-                      },
-                    ],
-                  },
-                ]}
-                data={sipParams || []}
-                switchCheckedValue={"0"}
-                switchUncheckedValue={"1"}
-                onChange={({ key, rowData }) => {
-                  void handleVariableChange(key, rowData);
-                }}
-              />
+              <>
+                <div className="flex items-center justify-between">
+                  <div />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setType("param");
+                      setIsCreateDialogOpen(true);
+                    }}
+                  >
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    {tc("add")}
+                  </Button>
+                </div>
+                <EditableTable
+                  columns={[
+                    { key: "id", header: "ID" },
+                    { key: "k", header: "名称", type: "text" },
+                    { key: "v", header: "值", type: "text" },
+                    { key: "disabled", header: "启用", type: "switch" },
+                    {
+                      key: "action",
+                      header: tc("actions"),
+                      type: "action",
+                      actions: [
+                        {
+                          type: "delete",
+                          label: tc("delete"),
+                        },
+                      ],
+                    },
+                  ]}
+                  data={sipParams || []}
+                  switchCheckedValue={"0"}
+                  switchUncheckedValue={"1"}
+                  onDelete={(v) => {
+                    void sipApi.deleteParams(v.id);
+                  }}
+                  onChange={({ key, rowData }) => {
+                    void handleVariableChange(key, rowData);
+                  }}
+                />
+              </>
             )}
           />
 
@@ -164,6 +208,7 @@ export default function SipPage() {
             onOpenChange={setIsCreateDialogOpen}
             onSubmit={handleCreatesip}
             sips={sips}
+            type={type}
           />
 
           {/* 删除确认对话框 */}

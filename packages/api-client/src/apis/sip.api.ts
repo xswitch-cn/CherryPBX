@@ -41,6 +41,10 @@ export interface CreateSipRequest {
   name: string;
   description?: string;
   template?: string;
+  k?: string;
+  v?: string;
+  disabled?: string;
+  ref_id?: string;
 }
 
 /**
@@ -86,6 +90,44 @@ export function createSipApi(client: ApiClient) {
       return client.request({
         method: "GET",
         path: "/api/params/realm/SOFIAGLOBALS",
+      });
+    },
+
+    /**
+     * 创建参数
+     */
+    createParam(data: {
+      k?: string;
+      v?: string;
+      ref_id?: string;
+      disabled?: string;
+      realm?: string;
+    }) {
+      return client.request({
+        method: "POST",
+        path: "/api/params",
+        body: data,
+      });
+    },
+
+    /**
+     * 编辑参数
+     */
+    editParams(data: { k?: string; v?: string; id?: string; action?: string }) {
+      return client.request({
+        method: "PUT",
+        path: `/api/params/${data.id}`,
+        body: data,
+      });
+    },
+
+    /**
+     * 删除参数
+     */
+    deleteParams(id: string) {
+      return client.request({
+        method: "DELETE",
+        path: `/api/params/${id}`,
       });
     },
   };

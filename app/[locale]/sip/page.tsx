@@ -12,7 +12,9 @@ import { Button } from "@/components/ui/button";
 import { sipApi } from "@/lib/api-client";
 import { type Sip, type CreateSipRequest } from "@repo/api-client";
 import { toast } from "sonner";
-// import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
+import { EditableTable } from "@/components/ui/editable-table";
 import { CreateSipDialog } from "./components/create-sip-dialog";
 import { createSipColumns } from "./sip-columns";
 
@@ -25,9 +27,10 @@ export default function SipPage() {
   const [sips, setSips] = useState<Sip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  // const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  // const [deleteTarget, setDeleteTarget] = useState<Sip | null>(null);
-  // const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Sip | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [sipParams, setSipParams] = useState<any[]>([]);
 
   const sipColumns = createSipColumns({
     t,
@@ -35,8 +38,8 @@ export default function SipPage() {
     tc,
     router,
     onHandleDelete: (sip: Sip) => {
-      // setDeleteTarget(sip);
-      // setIsDeleteDialogOpen(true);
+      setDeleteTarget(sip);
+      setIsDeleteDialogOpen(true);
     },
   });
 
@@ -45,6 +48,9 @@ export default function SipPage() {
     setIsLoading(true);
     try {
       const response = await sipApi.list();
+      const sipParamsResponse = await sipApi.getSipParams();
+      const sipParamsData: any = sipParamsResponse.data;
+      setSipParams(sipParamsData.data || []);
       const responseData = response.data;
       setSips(responseData || []);
     } catch (error) {
@@ -55,6 +61,7 @@ export default function SipPage() {
       setIsLoading(false);
     }
   }, [tc]);
+  console.log(sipParams, "///.......sipParams");
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -64,21 +71,21 @@ export default function SipPage() {
   }, [router, loadSips]);
 
   // 删除数据
-  // const handleDeleteSip = useCallback(async () => {
-  //   if (!deleteTarget) return;
-  //   setIsDeleting(true);
-  //   try {
-  //     await sipApi.delete(deleteTarget.id);
-  //     toast.success(tc("deleteSuccess") || "删除成功");
-  //     await loadSips();
-  //   } catch (error) {
-  //     console.error("Failed to delete sip:", error);
-  //     toast.error(tc("deleteFailed") || "删除失败");
-  //   } finally {
-  //     setIsDeleting(false);
-  //     setDeleteTarget(null);
-  //   }
-  // }, [deleteTarget, loadSips, tc]);
+  const handleDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await sipApi.delete(deleteTarget.id);
+      toast.success(tc("deleteSuccess") || "删除成功");
+      await loadSips();
+    } catch (error) {
+      console.error("Failed to delete sip:", error);
+      toast.error(tc("deleteFailed") || "删除失败");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  }, [deleteTarget, loadSips, tc]);
 
   const handleCreatesip = useCallback(
     async (_data: CreateSipRequest) => {
@@ -94,6 +101,8 @@ export default function SipPage() {
     },
     [loadSips, tc],
   );
+
+  const handleVariableChange = async (key: string, rowData: any) => {};
 
   return (
     <SidebarProvider>
@@ -119,6 +128,36 @@ export default function SipPage() {
             translationPrefix="table"
           />
 
+          <CollapsibleSection
+            title={ts("SIP Global Params")}
+            renderContent={() => (
+              <EditableTable
+                columns={[
+                  { key: "k", header: "名称" },
+                  { key: "v", header: "值", type: "text" },
+                  { key: "disabled", header: "启用", type: "switch" },
+                  {
+                    key: "action",
+                    header: tc("actions"),
+                    type: "action",
+                    actions: [
+                      {
+                        type: "delete",
+                        label: tc("delete"),
+                      },
+                    ],
+                  },
+                ]}
+                data={sipParams || []}
+                switchCheckedValue={"0"}
+                switchUncheckedValue={"1"}
+                onChange={({ key, rowData }) => {
+                  void handleVariableChange(key, rowData);
+                }}
+              />
+            )}
+          />
+
           {/* 新增 */}
           <CreateSipDialog
             open={isCreateDialogOpen}
@@ -128,16 +167,16 @@ export default function SipPage() {
           />
 
           {/* 删除确认对话框 */}
-          {/* <DeleteConfirmDialog
+          <DeleteConfirmDialog
             open={isDeleteDialogOpen}
             onOpenChange={setIsDeleteDialogOpen}
             title={ts("deleteSip")}
             description={tc("DeleteItem", { item: deleteTarget?.name ? deleteTarget?.name : "" })}
-            onSubmit={handleDeleteSip}
+            onSubmit={handleDelete}
             deleteText={tc("confirm") || "确定"}
             cancelText={tc("cancel") || "取消"}
             isLoading={isDeleting}
-          /> */}
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>

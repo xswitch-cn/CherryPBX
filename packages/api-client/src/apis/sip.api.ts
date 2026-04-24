@@ -68,5 +68,25 @@ export function createSipApi(client: ApiClient) {
         body: data,
       });
     },
+
+    /**
+     * 删除SIP Profile
+     */
+    delete(id: number) {
+      return client.request<{ success: boolean; message?: string }>({
+        method: "DELETE",
+        path: `/api/sip_profiles/${encodeURIComponent(id)}`,
+      });
+    },
+
+    /**
+     * 获取参数
+     */
+    getSipParams() {
+      return client.request({
+        method: "GET",
+        path: "/api/params/realm/SOFIAGLOBALS",
+      });
+    },
   };
 }

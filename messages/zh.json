@@ -1117,6 +1117,7 @@
     "addSip": "添加SIP",
     "createSip": "创建SIP配置",
     "deleteSip": "删除SIP",
+    "SIP Global Params": "SIP全局参数",
     "settingName": "设置名称",
     "name": "名称",
     "value": "值",

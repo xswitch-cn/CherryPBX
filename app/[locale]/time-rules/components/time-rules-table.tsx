@@ -11,21 +11,15 @@ import {
   type ColumnDef,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { toast } from "sonner";
 import { z } from "zod";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -43,98 +37,75 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Columns3Icon,
-  ChevronDownIcon,
-  PlusIcon,
   ChevronsLeftIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsRightIcon,
   EllipsisVerticalIcon,
-  SearchIcon,
   ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon,
 } from "lucide-react";
 
 export const timeRulesSchema = z.object({
   id: z.number(),
-  ruleName: z.string(),
+  name: z.string(),
   description: z.string(),
-  timeRange: z.string(),
-  weekdays: z.string(),
-  status: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  deleted_at: z.string(),
 });
 
-export function TimeRulesTable({ data: initialData }: { data: z.infer<typeof timeRulesSchema>[] }) {
+interface TimeRulesTableProps {
+  data: z.infer<typeof timeRulesSchema>[];
+  onDelete?: (rule: z.infer<typeof timeRulesSchema>) => void;
+  loading?: boolean;
+  pageIndex?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+  totalCount?: number;
+  pageCount?: number;
+}
+
+export function TimeRulesTable({
+  data: tableData,
+  onDelete,
+  pageIndex = 0,
+  pageSize = 10,
+  onPageChange,
+  onPageSizeChange,
+  totalCount = 0,
+  pageCount = 0,
+}: TimeRulesTableProps) {
   const t = useTranslations("timeRules");
   const tt = useTranslations("table");
-  const [data] = React.useState(() => initialData);
+  const [data, setData] = React.useState(tableData);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [pagination, setPagination] = React.useState({ pageIndex: 0, pageSize: 10 });
+
+  React.useEffect(() => {
+    setData(tableData);
+  }, [tableData]);
 
   const columns = React.useMemo<ColumnDef<z.infer<typeof timeRulesSchema>>[]>(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <div className="flex items-center justify-center">
-            <Checkbox
-              checked={
-                table.getIsAllPageRowsSelected() ||
-                (table.getIsSomePageRowsSelected() && "indeterminate")
-              }
-              onCheckedChange={(v) => table.toggleAllPageRowsSelected(!!v)}
-            />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="flex items-center justify-center">
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(v) => row.toggleSelected(!!v)}
-            />
-          </div>
-        ),
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
-        accessorKey: "ruleName",
+        accessorKey: "name",
         header: t("ruleName"),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900">
               <ClockIcon className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
             </div>
-            <span className="font-medium">{row.original.ruleName}</span>
+            <span className="font-medium">{row.original.name}</span>
           </div>
         ),
       },
       { accessorKey: "description", header: t("description") },
       {
-        accessorKey: "timeRange",
-        header: t("timeRange"),
-        cell: ({ row }) => <Badge variant="outline">{row.original.timeRange}</Badge>,
-      },
-      { accessorKey: "weekdays", header: t("weekdays") },
-      {
-        accessorKey: "status",
-        header: t("status"),
-        cell: ({ row }) =>
-          row.original.status === "Active" ? (
-            <div className="flex items-center gap-1.5">
-              <CheckCircleIcon className="h-4 w-4 text-green-500" />
-              <span className="text-green-600">{t("active")}</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <XCircleIcon className="h-4 w-4 text-red-500" />
-              <span className="text-red-600">{t("inactive")}</span>
-            </div>
-          ),
+        accessorKey: "created_at",
+        header: t("createdAt"),
+        cell: ({ row }) => row.original.created_at,
       },
       {
         id: "actions",
@@ -147,15 +118,15 @@ export function TimeRulesTable({ data: initialData }: { data: z.infer<typeof tim
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                onClick={() => toast.info(t("editingRule", { name: row.original.ruleName }))}
+                onClick={() => {
+                  const locale = document.documentElement.lang || "zh";
+                  window.location.href = `/${locale}/time-rules/${row.original.id}`;
+                }}
               >
-                {tt("edit")}
+                {tt("details")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => toast.error(t("deletedRule", { name: row.original.ruleName }))}
-              >
+              <DropdownMenuItem variant="destructive" onClick={() => void onDelete?.(row.original)}>
                 {tt("delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -163,18 +134,32 @@ export function TimeRulesTable({ data: initialData }: { data: z.infer<typeof tim
         ),
       },
     ],
-    [t, tt],
+    [t, tt, onDelete],
   );
 
   const table = useReactTable({
     data,
     columns,
-    state: { columnVisibility, rowSelection, pagination, globalFilter },
+    state: {
+      columnVisibility,
+      rowSelection,
+      pagination: { pageIndex, pageSize },
+      globalFilter,
+    },
     getRowId: (row) => row.id.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      const newPagination =
+        typeof updater === "function" ? updater({ pageIndex, pageSize }) : updater;
+      if (newPagination.pageIndex !== pageIndex) {
+        onPageChange?.(newPagination.pageIndex + 1);
+      }
+      if (newPagination.pageSize !== pageSize) {
+        onPageSizeChange?.(newPagination.pageSize);
+      }
+    },
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -183,46 +168,6 @@ export function TimeRulesTable({ data: initialData }: { data: z.infer<typeof tim
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="relative">
-          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("searchRules")}
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="h-9 w-64 pl-8"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns3Icon className="mr-2 h-4 w-4" />
-                {tt("columns")}
-                <ChevronDownIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((c) => c.getCanHide())
-                .map((c) => (
-                  <DropdownMenuCheckboxItem
-                    key={c.id}
-                    checked={c.getIsVisible()}
-                    onCheckedChange={(v) => c.toggleVisibility(!!v)}
-                  >
-                    {c.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button size="sm" onClick={() => toast.success(t("addRule"))}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            {t("addRule")}
-          </Button>
-        </div>
-      </div>
       <div className="overflow-hidden rounded-lg border">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-muted">
@@ -258,19 +203,13 @@ export function TimeRulesTable({ data: initialData }: { data: z.infer<typeof tim
         </Table>
       </div>
       <div className="flex items-center justify-between px-4">
-        <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-          {tt("selectedRows", {
-            selected: table.getFilteredSelectedRowModel().rows.length,
-            total: table.getFilteredRowModel().rows.length,
-          })}
+        <div className="text-sm text-muted-foreground">
+          {tt("totalCount", { total: totalCount })}
         </div>
-        <div className="flex w-full items-center gap-8 lg:w-fit">
-          <div className="hidden items-center gap-2 lg:flex">
-            <Label className="text-sm font-medium">{tt("rowsPerPage")}</Label>
-            <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(v) => table.setPageSize(Number(v))}
-            >
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">{tt("rowsPerPage")}</span>
+            <Select value={`${pageSize}`} onValueChange={(v) => onPageSizeChange?.(Number(v))}>
               <SelectTrigger size="sm" className="w-20">
                 <SelectValue />
               </SelectTrigger>
@@ -285,18 +224,16 @@ export function TimeRulesTable({ data: initialData }: { data: z.infer<typeof tim
               </SelectContent>
             </Select>
           </div>
-          <div className="flex w-fit items-center justify-center text-sm font-medium">
-            {tt("pageOf", {
-              current: table.getState().pagination.pageIndex + 1,
-              total: table.getPageCount(),
-            })}
-          </div>
-          <div className="ml-auto flex items-center gap-2 lg:ml-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">
+              {tt("pageOf", { current: pageIndex + 1, total: pageCount })}
+            </span>
             <Button
               variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() => table.setPageIndex(0)}
-              disabled={!table.getCanPreviousPage()}
+              className="size-8"
+              size="icon"
+              onClick={() => onPageChange?.(1)}
+              disabled={pageIndex === 0}
             >
               <ChevronsLeftIcon className="h-4 w-4" />
             </Button>
@@ -304,8 +241,8 @@ export function TimeRulesTable({ data: initialData }: { data: z.infer<typeof tim
               variant="outline"
               className="size-8"
               size="icon"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              onClick={() => onPageChange?.(pageIndex)}
+              disabled={pageIndex === 0}
             >
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
@@ -313,17 +250,17 @@ export function TimeRulesTable({ data: initialData }: { data: z.infer<typeof tim
               variant="outline"
               className="size-8"
               size="icon"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
+              onClick={() => onPageChange?.(pageIndex + 2)}
+              disabled={pageIndex >= pageCount - 1}
             >
               <ChevronRightIcon className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
-              className="hidden size-8 lg:flex"
+              className="size-8"
               size="icon"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-              disabled={!table.getCanNextPage()}
+              onClick={() => onPageChange?.(pageCount)}
+              disabled={pageIndex >= pageCount - 1}
             >
               <ChevronsRightIcon className="h-4 w-4" />
             </Button>

@@ -1463,6 +1463,7 @@
     "Other Params": "其他参数",
     "Confirm to Delete ?": "确认删除？",
     "value": "值",
+    "key": "键",
     "direction": "方向",
     "createSuccess": "添加成功",
     "createFailed": "添加失败",
@@ -1484,6 +1485,7 @@
     "Import Success": "导入成功",
     "uploadSuccess": "上传成功",
     "uploadFailed": "上传失败",
-    "control": "控制"
+    "control": "控制",
+    "createParam": "创建参数"
     }
 }

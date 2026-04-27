@@ -9,10 +9,17 @@ interface CreateSipDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: any) => Promise<void>;
   sips: Sip[];
+  type: string;
   onSuccess?: () => void;
 }
 
-export function CreateSipDialog({ open, onOpenChange, onSubmit, sips }: CreateSipDialogProps) {
+export function CreateSipDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  sips,
+  type,
+}: CreateSipDialogProps) {
   const t = useTranslations("sip");
   const tc = useTranslations("common");
 
@@ -52,12 +59,47 @@ export function CreateSipDialog({ open, onOpenChange, onSubmit, sips }: CreateSi
     ],
   };
 
+  const paramsFormConfig: FormConfig = {
+    fields: [
+      {
+        name: "k",
+        label: tc("key"),
+        type: "text",
+        placeholder: "key",
+        required: true,
+      },
+      {
+        name: "v",
+        label: tc("value"),
+        type: "text",
+        placeholder: "value",
+        required: true,
+      },
+      {
+        name: "ref_id",
+        label: "Ref ID",
+        type: "number",
+        defaultValue: 0,
+      },
+      {
+        name: "disabled",
+        label: tc("enabled"),
+        type: "radio",
+        radioOptions: [
+          { value: "0", label: tc("yes") },
+          { value: "1", label: tc("no") },
+        ],
+        defaultValue: "0",
+      },
+    ],
+  };
+
   return (
     <DynamicFormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={t("createSip")}
-      config={formConfig}
+      title={type === "sip" ? t("createSip") : tc("createParam")}
+      config={type === "sip" ? formConfig : paramsFormConfig}
       onSubmit={onSubmit}
       submitText={tc("submit")}
       cancelText={tc("close")}

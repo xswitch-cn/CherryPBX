@@ -193,11 +193,11 @@ export default function ConferenceDetailPage() {
         };
         setConference(updatedConference);
 
-        toast.success("保存成功");
+        toast.success(tt("saveSuccess"));
         return true;
       } catch (error) {
         console.error("Failed to update conference:", error);
-        toast.error("保存失败");
+        toast.error(tt("saveFailed"));
         return false;
       }
     },
@@ -215,12 +215,11 @@ export default function ConferenceDetailPage() {
   const handleAddParticipant = useCallback(
     async (data: any) => {
       if (!conference) {
-        toast.error("无法获取会议室信息");
+        toast.error(tt("cannotGetConference"));
         throw new Error("Conference not found");
       }
 
       try {
-        // 构建参与者数据
         const participantData = [
           {
             name: data.name,
@@ -232,14 +231,13 @@ export default function ConferenceDetailPage() {
         ];
 
         await conferencesApi.addMembers(conference.id, participantData);
-        toast.success("添加成功");
-        // 刷新与会者列表
+        toast.success(tt("addSuccess"));
         const response = await conferencesApi.getMembers(conference.id);
         const newParticipants = ((response.data as any).data || response.data) as any[];
         setParticipants(newParticipants);
       } catch (error) {
         console.error("Failed to add participant:", error);
-        toast.error("添加失败");
+        toast.error(tt("addFailed"));
         throw error;
       }
     },
@@ -268,16 +266,16 @@ export default function ConferenceDetailPage() {
           prev.map((p) => (p.id === id ? { ...p, disabled: String(member.disabled) } : p)),
         );
 
-        toast.success("设置成功");
+        toast.success(tt("setSuccess"));
       } catch (error) {
         console.error("Failed to set moderator:", error);
-        toast.error("设置失败");
+        toast.error(tt("setFailed"));
       }
     },
     [conference],
   );
 
-  // 处理删除与会者
+  // 处理{t("delete")}与会者
   const handleDeleteParticipant = useCallback(
     async (id: number) => {
       if (!conference) return;
@@ -287,10 +285,10 @@ export default function ConferenceDetailPage() {
         });
         setParticipants((prev) => prev.filter((p) => p.id !== id));
 
-        toast.success("删除成功");
+        toast.success(tt("deleteSuccess"));
       } catch (error) {
         console.error("Failed to delete participant:", error);
-        toast.error("删除失败");
+        toast.error(tt("deleteFailed"));
       }
     },
     [conference],
@@ -333,10 +331,10 @@ export default function ConferenceDetailPage() {
         <SidebarInset>
           <SiteHeader title={t("conference")} />
           <div className="flex flex-1 flex-col items-center justify-center">
-            <div className="text-center">未找到会议室</div>
+            <div className="text-center">{tt("noConferences")}</div>
             <Button onClick={handleBack} className="mt-4">
               <ArrowLeftIcon className="mr-2 h-4 w-4" />
-              返回列表
+              {t("back")}
             </Button>
           </div>
         </SidebarInset>
@@ -369,7 +367,7 @@ export default function ConferenceDetailPage() {
 
                   {/* 会议室详情 */}
                   <EditableSection
-                    title="基本信息"
+                    title={t("basicInfo")}
                     defaultValues={{
                       ...conference,
                       moderator: conference.moderator || "",
@@ -481,21 +479,26 @@ export default function ConferenceDetailPage() {
                         label: tt(perm.k) || perm.v,
                       }))}
                     />
-                    <EditableField label="字幕大小" name="subtitleSize" value="2" type="text" />
                     <EditableField
-                      label="字幕"
+                      label={tt("subtitleSize")}
+                      name="subtitleSize"
+                      value="2"
+                      type="text"
+                    />
+                    <EditableField
+                      label={tt("subtitle")}
                       name="subtitle"
                       value="${caller_id_number} ${caller_id_name}"
                       type="text"
                     />
                     <EditableField
-                      label="背景颜色"
+                      label={tt("backgroundColor")}
                       name="backgroundColor"
                       value="black"
                       type="text"
                     />
                     <EditableField
-                      label="字幕颜色"
+                      label={tt("subtitleColor")}
                       name="subtitleColor"
                       value="white"
                       type="text"
@@ -561,16 +564,16 @@ export default function ConferenceDetailPage() {
                   {/* 与会者 */}
                   <div className="mt-8">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium">与会者</h3>
+                      <h3 className="text-lg font-medium">{tt("participants")}</h3>
                       <div className="flex items-center gap-2">
                         <Button size="sm" variant="outline">
-                          编辑
+                          {tt("edit")}
                         </Button>
                         <Button size="sm" onClick={() => setIsAddParticipantOpen(true)}>
-                          添加与会者
+                          {tt("addParticipant")}
                         </Button>
                         <Button size="sm" onClick={() => setIsAddGroupMembersOpen(true)}>
-                          添加组成员
+                          {tt("addGroupMembers")}
                         </Button>
                       </div>
                     </div>
@@ -585,10 +588,12 @@ export default function ConferenceDetailPage() {
                             ) : (
                               <ChevronRight className="w-4 h-4" />
                             )}
-                            <span className="font-medium">所有用户</span>
+                            <span className="font-medium">{tt("allUsers")}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">删除组成员</span>
+                            <span className="text-sm text-muted-foreground">
+                              {tt("deleteMember")}
+                            </span>
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="mt-2">
@@ -596,12 +601,12 @@ export default function ConferenceDetailPage() {
                             <table className="w-full text-sm">
                               <thead className="bg-muted">
                                 <tr>
-                                  <th className="px-4 py-3 text-left">排序</th>
-                                  <th className="px-4 py-3 text-left">名称</th>
-                                  <th className="px-4 py-3 text-left">号码</th>
-                                  <th className="px-4 py-3 text-left">描述</th>
-                                  <th className="px-4 py-3 text-left">设为管理员</th>
-                                  <th className="px-4 py-3 text-right">操作</th>
+                                  <th className="px-4 py-3 text-left">{tt("order")}</th>
+                                  <th className="px-4 py-3 text-left">{tt("name")}</th>
+                                  <th className="px-4 py-3 text-left">{tt("number")}</th>
+                                  <th className="px-4 py-3 text-left">{tt("description")}</th>
+                                  <th className="px-4 py-3 text-left">{tt("setAsModerator")}</th>
+                                  <th className="px-4 py-3 text-right">{tt("actions")}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -626,7 +631,7 @@ export default function ConferenceDetailPage() {
                                               void handleSetAsModerator(participant.id)
                                             }
                                           >
-                                            设置
+                                            {tt("setAsModerator")}
                                           </Button>
                                         </td>
                                         <td className="px-4 py-3 border-t text-right">
@@ -638,7 +643,7 @@ export default function ConferenceDetailPage() {
                                               void handleDeleteParticipant(participant.id)
                                             }
                                           >
-                                            删除
+                                            {t("delete")}
                                           </Button>
                                         </td>
                                       </tr>
@@ -663,7 +668,7 @@ export default function ConferenceDetailPage() {
                                             />
                                           </svg>
                                         </div>
-                                        <p className="text-muted-foreground">暂无数据</p>
+                                        <p className="text-muted-foreground">{tt("noData")}</p>
                                       </div>
                                     </td>
                                   </tr>
@@ -685,10 +690,12 @@ export default function ConferenceDetailPage() {
                             ) : (
                               <ChevronRight className="w-4 h-4" />
                             )}
-                            <span className="font-medium">未分组</span>
+                            <span className="font-medium">{tt("ungrouped")}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">删除组成员</span>
+                            <span className="text-sm text-muted-foreground">
+                              {tt("deleteMember")}
+                            </span>
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="mt-2">
@@ -696,12 +703,12 @@ export default function ConferenceDetailPage() {
                             <table className="w-full text-sm">
                               <thead className="bg-muted">
                                 <tr>
-                                  <th className="px-4 py-3 text-left">排序</th>
-                                  <th className="px-4 py-3 text-left">名称</th>
-                                  <th className="px-4 py-3 text-left">号码</th>
-                                  <th className="px-4 py-3 text-left">描述</th>
-                                  <th className="px-4 py-3 text-left">设为管理员</th>
-                                  <th className="px-4 py-3 text-right">操作</th>
+                                  <th className="px-4 py-3 text-left">{tt("order")}</th>
+                                  <th className="px-4 py-3 text-left">{tt("name")}</th>
+                                  <th className="px-4 py-3 text-left">{tt("number")}</th>
+                                  <th className="px-4 py-3 text-left">{tt("description")}</th>
+                                  <th className="px-4 py-3 text-left">{tt("setAsModerator")}</th>
+                                  <th className="px-4 py-3 text-right">{tt("actions")}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -726,7 +733,7 @@ export default function ConferenceDetailPage() {
                                               void handleSetAsModerator(participant.id)
                                             }
                                           >
-                                            设置
+                                            {tt("setAsModerator")}
                                           </Button>
                                         </td>
                                         <td className="px-4 py-3 border-t text-right">
@@ -738,7 +745,7 @@ export default function ConferenceDetailPage() {
                                               void handleDeleteParticipant(participant.id)
                                             }
                                           >
-                                            删除
+                                            {t("delete")}
                                           </Button>
                                         </td>
                                       </tr>
@@ -763,7 +770,7 @@ export default function ConferenceDetailPage() {
                                             />
                                           </svg>
                                         </div>
-                                        <p className="text-muted-foreground">暂无数据</p>
+                                        <p className="text-muted-foreground">{tt("noData")}</p>
                                       </div>
                                     </td>
                                   </tr>
@@ -780,10 +787,10 @@ export default function ConferenceDetailPage() {
                   <div className="mt-8 mb-6">
                     <Collapsible defaultOpen>
                       <div className="flex items-center justify-between w-full text-left py-2">
-                        <h3 className="text-lg font-medium">媒体文件</h3>
+                        <h3 className="text-lg font-medium">{tt("mediaFiles")}</h3>
                         <div className="flex items-center gap-2">
                           <Button size="sm" onClick={() => setIsAddMediaOpen(true)}>
-                            + 添加媒体文件
+                            + {tt("addMediaFile")}
                           </Button>
                         </div>
                       </div>
@@ -793,8 +800,8 @@ export default function ConferenceDetailPage() {
                             <thead className="bg-muted">
                               <tr>
                                 <th className="px-4 py-3 text-left">ID</th>
-                                <th className="px-4 py-3 text-left">名称</th>
-                                <th className="px-4 py-3 text-right">操作</th>
+                                <th className="px-4 py-3 text-left">{tt("name")}</th>
+                                <th className="px-4 py-3 text-right">{tt("actions")}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -805,7 +812,7 @@ export default function ConferenceDetailPage() {
                                     <td className="px-4 py-3 border-t">{file.name}</td>
                                     <td className="px-4 py-3 border-t text-right">
                                       <Button size="sm" variant="ghost" className="text-red-500">
-                                        删除
+                                        {t("delete")}
                                       </Button>
                                     </td>
                                   </tr>
@@ -830,7 +837,7 @@ export default function ConferenceDetailPage() {
                                           />
                                         </svg>
                                       </div>
-                                      <p className="text-muted-foreground">暂无数据</p>
+                                      <p className="text-muted-foreground">{tt("noData")}</p>
                                     </div>
                                   </td>
                                 </tr>
@@ -851,26 +858,26 @@ export default function ConferenceDetailPage() {
         <DynamicFormDialog
           open={isAddParticipantOpen}
           onOpenChange={setIsAddParticipantOpen}
-          title="添加与会者"
+          title={tt("addParticipant")}
           config={{
             fields: [
               {
                 name: "name",
-                label: "名称",
+                label: tt("name"),
                 type: "text",
                 placeholder: "",
                 required: true,
               },
               {
                 name: "description",
-                label: "描述",
+                label: tt("description"),
                 type: "text",
                 placeholder: "",
                 required: false,
               },
               {
                 name: "number",
-                label: "号码",
+                label: tt("number"),
                 type: "text",
                 placeholder: "",
                 required: true,
@@ -878,8 +885,8 @@ export default function ConferenceDetailPage() {
             ],
           }}
           onSubmit={handleAddParticipant}
-          submitText="提交"
-          cancelText="关闭"
+          submitText={t("submit")}
+          cancelText={tt("close")}
           contentClassName="sm:max-w-[500px]"
         />
 

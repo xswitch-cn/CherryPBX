@@ -37,9 +37,11 @@ export function AddGroupMembersDialog({
 
   const loadGroups = useCallback(() => {
     setIsLoading(true);
+    console.log("Loading groups...");
     conferencesApi
       .getGroups()
       .then((response) => {
+        console.log("Groups API response:", response);
         if (Array.isArray(response.data)) {
           setGroups(response.data);
         } else if (response.data && Array.isArray(response.data)) {
@@ -47,6 +49,7 @@ export function AddGroupMembersDialog({
         } else {
           setGroups([]);
         }
+        console.log("Groups set to:", groups);
       })
       .catch((error) => {
         console.error("Failed to load groups:", error);
@@ -122,14 +125,41 @@ export function AddGroupMembersDialog({
   useEffect(() => {
     if (step === 2 && groupId !== -1) {
       loadGroupUsers(groupId);
-      loadRoomMembers();
+      setRoomMembers([]);
     }
-  }, [step, groupId, loadGroupUsers, loadRoomMembers]);
+  }, [step, groupId, loadGroupUsers]);
 
-  const handleGroupChange = useCallback((value: string) => {
-    const selectedGroupId = parseInt(value, 10);
-    setGroupId(selectedGroupId);
-  }, []);
+  const handleGroupChange = useCallback(
+    (value: string) => {
+      const selectedGroupId = parseInt(value, 10);
+      setGroupId(selectedGroupId);
+
+      if (selectedGroupId !== -1 && roomId) {
+        setIsLoading(true);
+        conferencesApi
+          .getGroupMembers(roomId, selectedGroupId)
+          .then((response) => {
+            if (Array.isArray(response.data)) {
+              setGroupUsers(response.data);
+            } else if (response.data && Array.isArray(response.data)) {
+              setGroupUsers(response.data);
+            } else {
+              setGroupUsers([]);
+            }
+            setSelectedUsers([]);
+          })
+          .catch((error) => {
+            console.error("Failed to load group users:", error);
+            toast.error("获取组成员失败");
+            setGroupUsers([]);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      }
+    },
+    [roomId],
+  );
 
   const handleNext = useCallback(() => {
     if (groupId !== -1) {
@@ -246,7 +276,7 @@ export function AddGroupMembersDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={() => onOpenChange(false)}></div>
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-3xl">
+      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-medium">选择用户组</h3>
           <button className="text-gray-500 hover:text-gray-700" onClick={() => onOpenChange(false)}>
@@ -254,44 +284,46 @@ export function AddGroupMembersDialog({
           </button>
         </div>
 
-        <div className="flex items-center justify-center py-4 border-b">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center py-4 border-b px-6">
+          <div className="flex items-center gap-2">
             <div
-              className={`flex items-center justify-center w-8 h-8 rounded-full ${step === 1 ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"}`}
+              className={`flex items-center justify-center w-10 h-10 rounded-full ${step === 1 ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"}`}
             >
               {step === 1 ? <span>1</span> : <span>✓</span>}
             </div>
-            <div className={`h-0.5 w-24 ${step >= 2 ? "bg-blue-500" : "bg-gray-200"}`}></div>
+            <span className="text-sm font-medium">选择用户组</span>
+          </div>
+          <div className={`h-0.5 w-16 mx-4 ${step >= 2 ? "bg-blue-500" : "bg-gray-200"}`}></div>
+          <div className="flex items-center gap-2">
             <div
-              className={`flex items-center justify-center w-8 h-8 rounded-full ${step === 2 ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"}`}
+              className={`flex items-center justify-center w-10 h-10 rounded-full ${step === 2 ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-500"}`}
             >
               <span>2</span>
             </div>
-          </div>
-          <div className="flex items-center gap-24 ml-8">
-            <span className="text-sm font-medium">选择用户组</span>
             <span className="text-sm font-medium">添加成员</span>
           </div>
         </div>
 
         <div className="p-6">
           {step === 1 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Select
-                onValueChange={handleGroupChange}
-                value={groupId === -1 ? undefined : groupId.toString()}
-              >
-                <SelectTrigger className="w-80">
-                  <SelectValue placeholder="选择用户组" />
-                </SelectTrigger>
-                <SelectContent>
-                  {groups.map((group) => (
-                    <SelectItem key={group.id} value={group.id.toString()}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="relative w-80">
+                <Select
+                  onValueChange={handleGroupChange}
+                  value={groupId === -1 ? undefined : groupId.toString()}
+                >
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue placeholder="选择用户组" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" className="w-full">
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={group.id.toString()}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           ) : (
             <div className="flex gap-4">
@@ -452,22 +484,30 @@ export function AddGroupMembersDialog({
             </div>
           )}
 
-          <div className="flex justify-end mt-6 space-x-2">
+          <div className="flex justify-end mt-8 space-x-2">
             {step === 1 ? (
               <>
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                <Button variant="outline" className="bg-white" onClick={() => onOpenChange(false)}>
                   关闭
                 </Button>
-                <Button onClick={handleNext} disabled={groupId === -1}>
+                <Button
+                  onClick={handleNext}
+                  disabled={groupId === -1}
+                  className={
+                    groupId === -1
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gray-500 hover:bg-gray-600"
+                  }
+                >
                   下一步
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={handleSubmit}>
+                <Button variant="outline" className="bg-white" onClick={handleSubmit}>
                   关闭
                 </Button>
-                <Button onClick={handlePrev} variant="outline">
+                <Button onClick={handlePrev} variant="outline" className="bg-white">
                   上一步
                 </Button>
               </>

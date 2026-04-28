@@ -267,7 +267,7 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
                 <PlusIcon className="mr-2 h-4 w-4" />
                 {tc("add")}
               </Button>
-              <Button variant="outline" size="sm" onClick={() =>  handleUploadClick()}>
+              <Button variant="outline" size="sm" onClick={() => handleUploadClick()}>
                 <UploadIcon className="mr-2 h-4 w-4" />
                 {tl("Upload License File")}
               </Button>
@@ -299,7 +299,7 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
                   { key: "k", header: "名称" },
                   { key: "v", header: "值", type: "text" },
                 ]}
-                data={item.params || []}
+                data={item?.params || []}
                 switchCheckedValue={0}
                 switchUncheckedValue={1}
                 onChange={({ key, rowData }) => {

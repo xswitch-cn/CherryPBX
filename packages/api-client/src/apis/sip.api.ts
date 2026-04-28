@@ -29,6 +29,7 @@ export interface Sip {
   rtp_ip_expanded: string;
   ocodec_expanded: string;
   icodec_expanded: string;
+  params?: any[];
 }
 
 /**
@@ -163,6 +164,38 @@ export function createSipApi(client: ApiClient) {
       return client.request({
         method: "DELETE",
         path: `/api/params/${id}`,
+      });
+    },
+
+    /**
+     * 编辑详情参数
+     */
+    upDetailParams(id: string, paramsId: number, data: Record<string, any>) {
+      return client.request<any>({
+        method: "PUT",
+        path: `/api/sip_profiles/${id}/params/${paramsId}`,
+        body: data,
+      });
+    },
+
+    /**
+     * 添加详情参数
+     */
+    addDetailParams(id: string, data: Record<string, any>) {
+      return client.request<any>({
+        method: "POST",
+        path: `/api/sip_profiles/${id}/params/`,
+        body: data,
+      });
+    },
+
+    /**
+     * 删除详情参数
+     */
+    deleteDetailParams(id: string, paramsId: number) {
+      return client.request<any>({
+        method: "DELETE",
+        path: `/api/sip_profiles/${id}/param/${paramsId}`,
       });
     },
   };

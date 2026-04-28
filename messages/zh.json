@@ -1491,6 +1491,7 @@
     "uploadFailed": "上传失败",
     "control": "控制",
     "createParam": "创建参数",
-    "description": "描述"
+    "description": "描述",
+    "Add Param": "添加参数"
     }
 }

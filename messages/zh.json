@@ -1167,7 +1167,11 @@
     "noSip": "未找到SIP设置。",
     "editingSetting": "正在编辑设置：{name}",
     "deletedSetting": "已删除设置：{name}",
-    "Data": "数据地址"
+    "Data": "数据地址",
+    "SIP Port": "SIP端口",
+    "callSource": "呼叫源",
+    "Inbound Codec": "呼入编码",
+	  "Outbound Codec": "呼出编码"
   },
   "license": {
     "createLicense": "创建许可证",
@@ -1486,6 +1490,7 @@
     "uploadSuccess": "上传成功",
     "uploadFailed": "上传失败",
     "control": "控制",
-    "createParam": "创建参数"
+    "createParam": "创建参数",
+    "description": "描述"
     }
 }

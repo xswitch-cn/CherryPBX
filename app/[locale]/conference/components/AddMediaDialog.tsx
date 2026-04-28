@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -31,7 +31,14 @@ export function AddMediaDialog({
     conferencesApi
       .getMediaFilesList("SYSTEM,UPLOAD,TTS")
       .then((response) => {
-        // setMediaFiles(response.data);
+        // 检查response.data是否是数组，如果不是，尝试获取response.data.data
+        if (Array.isArray(response.data)) {
+          setMediaFiles(response.data);
+        } else if (response.data && Array.isArray((response.data as any).data)) {
+          setMediaFiles((response.data as any).data);
+        } else {
+          setMediaFiles([]);
+        }
       })
       .catch((error) => {
         console.error("Failed to load media files:", error);
@@ -63,9 +70,13 @@ export function AddMediaDialog({
         const response = await conferencesApi.addMedia(roomId, mediaData);
 
         if (response.data) {
+          const mediaId =
+            typeof response.data === "object" && response.data !== null
+              ? (response.data as any).id
+              : response.data;
           const newMedia = {
             ...mediaData,
-            id: response.data,
+            id: mediaId,
             name: mediaFiles.find((file) => file.id === parseInt(data.media_file_id))?.name || "",
           };
           onNewMediaAdded(newMedia);

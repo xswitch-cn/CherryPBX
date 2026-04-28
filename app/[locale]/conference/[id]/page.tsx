@@ -45,6 +45,8 @@ export default function ConferenceDetailPage() {
   const [isAddParticipantOpen, setIsAddParticipantOpen] = useState(false);
   const [isAddGroupMembersOpen, setIsAddGroupMembersOpen] = useState(false);
   const [isAddMediaOpen, setIsAddMediaOpen] = useState(false);
+  const [isAllUsersOpen, setIsAllUsersOpen] = useState(false);
+  const [isUngroupedOpen, setIsUngroupedOpen] = useState(false);
 
   // 加载conference详情
   const loadConferenceDetail = useCallback(async () => {
@@ -68,7 +70,7 @@ export default function ConferenceDetailPage() {
         conferencesApi.getCallPermissions(),
         conferencesApi.getUsers(),
         conferencesApi.getMediaFiles(conferenceId),
-        fetch(`/api/conference_rooms/${conferenceId}/members`),
+        conferencesApi.getMembers(conferenceId),
       ]);
 
       // 处理会议详情
@@ -93,8 +95,9 @@ export default function ConferenceDetailPage() {
       setMediaFiles((mediaFilesResponse.data as any[]) || []);
 
       // 处理与会者数据
-      const participantsData = await participantsResponse.json();
-      setParticipants((participantsData.data || participantsData) as any[]);
+      const loadedParticipants = ((participantsResponse.data as any).data ||
+        participantsResponse.data) as any[];
+      setParticipants(loadedParticipants);
     } catch (error) {
       console.error("Failed to load conference detail:", error);
       toast.error(tt("loadFailed"));
@@ -139,7 +142,6 @@ export default function ConferenceDetailPage() {
           agora_token: formData.agora_token,
           agora_channel: formData.agora_channel,
           auto_mute: formData.auto_mute,
-          stream_address: formData.stream_address,
           banner: JSON.stringify(videoBanner),
         };
 
@@ -183,11 +185,11 @@ export default function ConferenceDetailPage() {
           ...conference,
           name: formData.name,
           description: formData.description,
-          nbr: formData.number,
+          nbr: formData.nbr,
           realm: formData.realm,
           capacity: formData.capacity,
           banner: videoBanner,
-          enable_agora: formData.enableAgora,
+          enable_agora: formData.enable_agora,
         };
         setConference(updatedConference);
 
@@ -212,18 +214,29 @@ export default function ConferenceDetailPage() {
   // 处理添加与会者
   const handleAddParticipant = useCallback(
     async (data: any) => {
+      if (!conference) {
+        toast.error("无法获取会议室信息");
+        throw new Error("Conference not found");
+      }
+
       try {
-        if (!conference) return;
+        // 构建参与者数据
+        const participantData = [
+          {
+            name: data.name,
+            num: data.number,
+            room_id: conference.id,
+            description: data.description || "",
+            group_id: 0,
+          },
+        ];
 
-        const participantData = {
-          name: data.name,
-          num: data.number,
-          room_id: conference.id,
-        };
-
-        await conferencesApi.addMembers(conference.id, [participantData]);
+        await conferencesApi.addMembers(conference.id, participantData);
         toast.success("添加成功");
-        // 这里可以添加刷新与会者列表的逻辑
+        // 刷新与会者列表
+        const response = await conferencesApi.getMembers(conference.id);
+        const newParticipants = ((response.data as any).data || response.data) as any[];
+        setParticipants(newParticipants);
       } catch (error) {
         console.error("Failed to add participant:", error);
         toast.error("添加失败");
@@ -238,13 +251,10 @@ export default function ConferenceDetailPage() {
     setMediaFiles((prev) => [...prev, media]);
   }, []);
 
-  // 处理添加组成员成功后的回调
   const handleMembersAdded = useCallback(async () => {
     if (!conference) return;
-    // 刷新与会者列表
-    const response = await fetch(`/api/conference_rooms/${conference.id}/members`);
-    const data = await response.json();
-    setParticipants((data.data || data) as any[]);
+    const response = await conferencesApi.getMembers(conference.id);
+    setParticipants(((response.data as any).data || response.data) as any[]);
   }, [conference]);
 
   // 处理设为管理员
@@ -252,12 +262,8 @@ export default function ConferenceDetailPage() {
     async (id: number) => {
       if (!conference) return;
       try {
-        const response = await fetch(`/api/conference_rooms/moderator/${conference.id}/${id}`, {
-          method: "PUT",
-        });
-        const member = await response.json();
-
-        // 更新本地状态
+        const response = await conferencesApi.setModerator(conference.id, id);
+        const member = response.data as any;
         setParticipants((prev) =>
           prev.map((p) => (p.id === id ? { ...p, disabled: String(member.disabled) } : p)),
         );
@@ -279,8 +285,6 @@ export default function ConferenceDetailPage() {
         await fetch(`/api/conference_rooms/${conference.id}/members/${id}`, {
           method: "DELETE",
         });
-
-        // 更新本地状态
         setParticipants((prev) => prev.filter((p) => p.id !== id));
 
         toast.success("删除成功");
@@ -295,13 +299,9 @@ export default function ConferenceDetailPage() {
   // 处理添加与会者成功后的回调
   const handleMemberAdded = useCallback(async () => {
     if (!conference) return;
-    // 刷新与会者列表
-    const response = await fetch(`/api/conference_rooms/${conference.id}/members`);
-    const data = await response.json();
-    setParticipants((data.data || data) as any[]);
+    const response = await conferencesApi.getMembers(conference.id);
+    setParticipants(((response.data as any).data || response.data) as any[]);
   }, [conference]);
-
-  // 初始化
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
@@ -390,7 +390,6 @@ export default function ConferenceDetailPage() {
                       agora_token: conference.agora_token || "",
                       agora_channel: conference.agora_channel || "",
                       auto_mute: false,
-                      stream_address: "",
                     }}
                     onSave={handleSave}
                     onCancel={handleCancel}
@@ -576,12 +575,16 @@ export default function ConferenceDetailPage() {
                       </div>
                     </div>
 
-                    {/* 所有用户分组 */}
+                    {/* 所有用户分组 - 显示组成员 */}
                     <div className="mb-4">
-                      <Collapsible defaultOpen>
+                      <Collapsible open={isAllUsersOpen} onOpenChange={setIsAllUsersOpen}>
                         <CollapsibleTrigger className="flex items-center justify-between w-full text-left py-2">
                           <div className="flex items-center gap-2">
-                            <ChevronDown className="w-4 h-4" />
+                            {isAllUsersOpen ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
                             <span className="font-medium">所有用户</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -602,39 +605,44 @@ export default function ConferenceDetailPage() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {participants.length > 0 ? (
-                                  participants.map((participant, index) => (
-                                    <tr key={participant.id}>
-                                      <td className="px-4 py-3 border-t">{index + 1}</td>
-                                      <td className="px-4 py-3 border-t">{participant.name}</td>
-                                      <td className="px-4 py-3 border-t">{participant.num}</td>
-                                      <td className="px-4 py-3 border-t">
-                                        {participant.description || "-"}
-                                      </td>
-                                      <td className="px-4 py-3 border-t">
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="text-green-500"
-                                          onClick={() => void handleSetAsModerator(participant.id)}
-                                        >
-                                          设置
-                                        </Button>
-                                      </td>
-                                      <td className="px-4 py-3 border-t text-right">
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="text-red-500"
-                                          onClick={() =>
-                                            void handleDeleteParticipant(participant.id)
-                                          }
-                                        >
-                                          删除
-                                        </Button>
-                                      </td>
-                                    </tr>
-                                  ))
+                                {participants.filter((p) => p.group_id && Number(p.group_id) > 0)
+                                  .length > 0 ? (
+                                  participants
+                                    .filter((p) => p.group_id && Number(p.group_id) > 0)
+                                    .map((participant, index) => (
+                                      <tr key={participant.id}>
+                                        <td className="px-4 py-3 border-t">{index + 1}</td>
+                                        <td className="px-4 py-3 border-t">{participant.name}</td>
+                                        <td className="px-4 py-3 border-t">{participant.num}</td>
+                                        <td className="px-4 py-3 border-t">
+                                          {participant.description || "-"}
+                                        </td>
+                                        <td className="px-4 py-3 border-t">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-green-500"
+                                            onClick={() =>
+                                              void handleSetAsModerator(participant.id)
+                                            }
+                                          >
+                                            设置
+                                          </Button>
+                                        </td>
+                                        <td className="px-4 py-3 border-t text-right">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-red-500"
+                                            onClick={() =>
+                                              void handleDeleteParticipant(participant.id)
+                                            }
+                                          >
+                                            删除
+                                          </Button>
+                                        </td>
+                                      </tr>
+                                    ))
                                 ) : (
                                   <tr>
                                     <td colSpan={6} className="px-4 py-10 text-center">
@@ -667,12 +675,16 @@ export default function ConferenceDetailPage() {
                       </Collapsible>
                     </div>
 
-                    {/* 未分组 */}
+                    {/* 未分组 - 显示通过添加与会者添加的用户 */}
                     <div className="mb-4">
-                      <Collapsible defaultOpen>
+                      <Collapsible open={isUngroupedOpen} onOpenChange={setIsUngroupedOpen}>
                         <CollapsibleTrigger className="flex items-center justify-between w-full text-left py-2">
                           <div className="flex items-center gap-2">
-                            <ChevronDown className="w-4 h-4" />
+                            {isUngroupedOpen ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
                             <span className="font-medium">未分组</span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -693,29 +705,69 @@ export default function ConferenceDetailPage() {
                                 </tr>
                               </thead>
                               <tbody>
-                                <tr>
-                                  <td colSpan={6} className="px-4 py-10 text-center">
-                                    <div className="flex flex-col items-center justify-center">
-                                      <div className="w-12 h-12 mb-2 text-muted-foreground">
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          strokeWidth={1.5}
-                                          stroke="currentColor"
-                                          className="w-12 h-12"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.25-1.5H9.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h7.5c.621 0 1.125-.504 1.125-1.125V10.5a1.125 1.125 0 0 0-1.125-1.125Z"
-                                          />
-                                        </svg>
+                                {participants.filter((p) => !p.group_id || Number(p.group_id) === 0)
+                                  .length > 0 ? (
+                                  participants
+                                    .filter((p) => !p.group_id || Number(p.group_id) === 0)
+                                    .map((participant, index) => (
+                                      <tr key={participant.id}>
+                                        <td className="px-4 py-3 border-t">{index + 1}</td>
+                                        <td className="px-4 py-3 border-t">{participant.name}</td>
+                                        <td className="px-4 py-3 border-t">{participant.num}</td>
+                                        <td className="px-4 py-3 border-t">
+                                          {participant.description || "-"}
+                                        </td>
+                                        <td className="px-4 py-3 border-t">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-green-500"
+                                            onClick={() =>
+                                              void handleSetAsModerator(participant.id)
+                                            }
+                                          >
+                                            设置
+                                          </Button>
+                                        </td>
+                                        <td className="px-4 py-3 border-t text-right">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-red-500"
+                                            onClick={() =>
+                                              void handleDeleteParticipant(participant.id)
+                                            }
+                                          >
+                                            删除
+                                          </Button>
+                                        </td>
+                                      </tr>
+                                    ))
+                                ) : (
+                                  <tr>
+                                    <td colSpan={6} className="px-4 py-10 text-center">
+                                      <div className="flex flex-col items-center justify-center">
+                                        <div className="w-12 h-12 mb-2 text-muted-foreground">
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            strokeWidth={1.5}
+                                            stroke="currentColor"
+                                            className="w-12 h-12"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.25-1.5H9.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h7.5c.621 0 1.125-.504 1.125-1.125V10.5a1.125 1.125 0 0 0-1.125-1.125Z"
+                                            />
+                                          </svg>
+                                        </div>
+                                        <p className="text-muted-foreground">暂无数据</p>
                                       </div>
-                                      <p className="text-muted-foreground">暂无数据</p>
-                                    </div>
-                                  </td>
-                                </tr>
+                                    </td>
+                                  </tr>
+                                )}
                               </tbody>
                             </table>
                           </div>
@@ -727,14 +779,14 @@ export default function ConferenceDetailPage() {
                   {/* 媒体文件 */}
                   <div className="mt-8 mb-6">
                     <Collapsible defaultOpen>
-                      <CollapsibleTrigger className="flex items-center justify-between w-full text-left py-2">
+                      <div className="flex items-center justify-between w-full text-left py-2">
                         <h3 className="text-lg font-medium">媒体文件</h3>
                         <div className="flex items-center gap-2">
                           <Button size="sm" onClick={() => setIsAddMediaOpen(true)}>
                             + 添加媒体文件
                           </Button>
                         </div>
-                      </CollapsibleTrigger>
+                      </div>
                       <CollapsibleContent className="mt-2">
                         <div className="border rounded-lg overflow-hidden">
                           <table className="w-full text-sm">

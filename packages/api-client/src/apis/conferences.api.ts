@@ -82,6 +82,11 @@ export interface ConferencesApi {
   addGroupMembers(roomId: number | string, data: any): ReturnType<ApiClient["request"]>;
   addMedia(roomId: number | string, data: any): ReturnType<ApiClient["request"]>;
   getMediaFilesList(types: string): ReturnType<ApiClient["request"]>;
+  getMembers(roomId: number | string): ReturnType<ApiClient["request"]>;
+  setModerator(
+    roomId: number | string,
+    memberId: number | string,
+  ): ReturnType<ApiClient["request"]>;
 }
 
 export function createConferencesApi(client: ApiClient): ConferencesApi {
@@ -209,6 +214,20 @@ export function createConferencesApi(client: ApiClient): ConferencesApi {
         method: "GET",
         path: `/api/media_files`,
         query: { types },
+      });
+    },
+
+    getMembers(roomId: number | string) {
+      return client.request({
+        method: "GET",
+        path: `/api/conference_rooms/${roomId}/members`,
+      });
+    },
+
+    setModerator(roomId: number | string, memberId: number | string) {
+      return client.request({
+        method: "PUT",
+        path: `/api/conference_rooms/moderator/${roomId}/${memberId}`,
       });
     },
   };

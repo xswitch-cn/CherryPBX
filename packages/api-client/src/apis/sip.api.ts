@@ -24,6 +24,11 @@ export interface Sip {
   // 以下字段来自 FreeSWITCH sofia 状态
   url?: string; // SIP Profile 状态数据
   running?: boolean; // 是否正在运行
+  sip_ip_expanded: string;
+  sip_port_expanded: string;
+  rtp_ip_expanded: string;
+  ocodec_expanded: string;
+  icodec_expanded: string;
 }
 
 /**
@@ -46,6 +51,15 @@ export interface CreateSipRequest {
   disabled?: string;
   ref_id?: string;
 }
+
+/**
+ * 创建响应
+ */
+export type CreateSipResponse = {
+  success: boolean;
+  data: Sip;
+  message?: string;
+};
 
 /**
  * Sip 相关 API 接口
@@ -80,6 +94,27 @@ export function createSipApi(client: ApiClient) {
       return client.request<{ success: boolean; message?: string }>({
         method: "DELETE",
         path: `/api/sip_profiles/${encodeURIComponent(id)}`,
+      });
+    },
+
+    /**
+     * 获取详情
+     */
+    getById(id: string) {
+      return client.request<Sip>({
+        method: "GET",
+        path: `/api/sip_profiles/${id}`,
+      });
+    },
+
+    /**
+     * 编辑数据
+     */
+    update(id: string, data: Sip) {
+      return client.request<CreateSipResponse>({
+        method: "PUT",
+        path: `/api/sip_profiles/${id}`,
+        body: data,
       });
     },
 

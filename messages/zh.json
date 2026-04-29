@@ -1260,7 +1260,8 @@
     "searchMedia": "搜索媒体文件...",
     "noMedia": "未找到媒体文件。",
     "deleteMedia": "删除媒体文件",
-    "deletedMedia": "已删除媒体：{name}"
+    "deletedMedia": "已删除媒体：{name}",
+    "supportedFormats": "支持的格式：WAV, MP3, OGG, MP4, AVI"
   },
   "ipBlacklist": {
     "addIp": "添加IP",
@@ -1509,6 +1510,7 @@
     "selectDate": "选择日期",
     "import":"导入",
     "export":"导出",
+    "upload files": "上传文件",
     "Import Success": "导入成功",
     "uploadSuccess": "上传成功",
     "uploadFailed": "上传失败",

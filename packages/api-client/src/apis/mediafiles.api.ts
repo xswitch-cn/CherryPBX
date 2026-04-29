@@ -13,6 +13,19 @@ export interface MediaFile {
   k?: string;
   v?: string;
   isSelectedMediaFile?: boolean;
+  original_file_name?: string;
+  domain?: string;
+  file_name?: string;
+  channel_uuid?: string;
+  created_at?: string;
+  deleted_at?: string;
+  updated_at?: string;
+  processing_flag?: number;
+  meta?: string;
+  dir_path?: string;
+  mime?: string;
+  geo_position?: string;
+  thumb_path?: string;
 }
 
 export type ListMediaFilesQuery = QueryParams & {
@@ -67,6 +80,20 @@ export function createMediaFilesApi(client: ApiClient) {
       return client.request<{ success: boolean }>({
         method: "DELETE",
         path: `/api/media_files/${encodeURIComponent(id)}`,
+      });
+    },
+
+    /**
+     * 上传媒体文件
+     */
+    upload(formData: FormData) {
+      return client.request<any>({
+        method: "POST",
+        path: "/api/upload",
+        body: formData,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
     },
   };

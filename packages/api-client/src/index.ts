@@ -38,9 +38,6 @@ export { createBlacklistsApi } from "./apis/blacklists.api";
 export { createConferencesApi } from "./apis/conferences.api";
 export { createSipApi } from "./apis/sip.api";
 
-export { createMediasApi } from "./apis/media.api";
-export type { Media, ListMediasQuery } from "./apis/media.api";
-
 export type { ListUsersQuery, ListUsersResponse, UsersApi } from "./apis/users.api";
 export type {
   ListConferencesQuery,

@@ -33,7 +33,6 @@ import {
   createMediaFilesApi,
   createNumberTransformApi,
   createTimeRulesApi,
-  createMediasApi,
   type Hotline,
   type DOD,
   type ListHotlinesResponse,
@@ -124,7 +123,6 @@ export const conferencesApi = createConferencesApi(apiClient);
 export const sipApi = createSipApi(apiClient);
 export const numberTransformApi = createNumberTransformApi(apiClient);
 export const timeRulesApi = createTimeRulesApi(apiClient);
-export const mediasApi = createMediasApi(apiClient);
 
 // 导出常用类型
 export type {

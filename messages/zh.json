@@ -1247,6 +1247,7 @@
     "applyFailed": "应用许可证失败"
   },
   "media": {
+    "name": "名称",
     "addMedia": "添加媒体文件",
     "fileName": "文件名",
     "type": "类型",
@@ -1258,6 +1259,7 @@
     "video": "视频",
     "searchMedia": "搜索媒体文件...",
     "noMedia": "未找到媒体文件。",
+    "deleteMedia": "删除媒体文件",
     "deletedMedia": "已删除媒体：{name}"
   },
   "ipBlacklist": {

@@ -87,10 +87,14 @@ export default function SipDetailsPage({ params }: SipDetailsPageProps) {
 
   const handleVariableChange = async (key: string, rowData: any) => {
     try {
-      await sipApi.upDetailParams(sipId, rowData.id, {
-        k: rowData.k,
-        v: rowData.v,
-      });
+      if (key === "disabled") {
+        await sipApi.upDetailParams(sipId, rowData.id, { action: "toggle" });
+      } else {
+        await sipApi.upDetailParams(sipId, rowData.id, {
+          k: rowData.k,
+          v: rowData.v,
+        });
+      }
       toast.success(tc("saveSuccess") || "保存成功");
       await loadSipDetail();
     } catch (error) {

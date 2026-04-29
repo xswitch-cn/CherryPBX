@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EllipsisVerticalIcon, RouteIcon } from "lucide-react";
-import { type Media } from "@repo/api-client";
+import { type MediaFile } from "@repo/api-client";
 import { useRouter } from "@/navigation";
 
 interface TranslationFunctions {
@@ -27,8 +27,8 @@ export function createMediaColumns({
   onHandleDelete,
 }: TranslationFunctions & { onRefresh?: () => Promise<void> } & {
   router: ReturnType<typeof useRouter>;
-  onHandleDelete: (route: Media) => void;
-}): ColumnDef<Media>[] {
+  onHandleDelete: (media: MediaFile) => void;
+}): ColumnDef<MediaFile>[] {
   return [
     {
       accessorKey: "name",

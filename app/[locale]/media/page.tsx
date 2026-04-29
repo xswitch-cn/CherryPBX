@@ -9,10 +9,12 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ListFilterForm, ListTable, ListPagination } from "@/components/ui/list-components";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { ImportDialog } from "@/components/ui/import-dialog";
-import { mediasApi } from "@/lib/api-client";
-import { type Media, type ListMediasQuery } from "@repo/api-client";
+import { mediaFilesApi } from "@/lib/api-client";
+import { type MediaFile, type ListMediaFilesQuery } from "@repo/api-client";
 import { createMediaColumns } from "./media-columns";
 import { toast } from "sonner";
+import { UploadIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // 每页显示数量
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -25,7 +27,7 @@ export default function MediasPage() {
   const ttt = useTranslations("table");
   const tc = useTranslations("common");
 
-  const [medias, setMedias] = useState<Media[]>([]);
+  const [medias, setMedias] = useState<MediaFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [pageCount, setPageCount] = useState(0);
@@ -36,7 +38,7 @@ export default function MediasPage() {
     destType?: string;
   }>({});
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Media | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MediaFile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -49,7 +51,7 @@ export default function MediasPage() {
     tt: ttt,
     tc,
     router,
-    onHandleDelete: (media: Media) => {
+    onHandleDelete: (media: MediaFile) => {
       setDeleteTarget(media);
       setIsDeleteDialogOpen(true);
     },
@@ -67,13 +69,13 @@ export default function MediasPage() {
     ) => {
       setIsLoading(true);
       try {
-        const queryParams: ListMediasQuery = {
+        const queryParams: ListMediaFilesQuery = {
           page,
           perPage: size,
           ...filterParams,
         };
 
-        const response = await mediasApi.list(queryParams);
+        const response = await mediaFilesApi.list(queryParams);
         const responseData = response.data;
 
         setMedias(responseData.data || []);
@@ -101,11 +103,11 @@ export default function MediasPage() {
     setIsDeleting(true);
     try {
       // await mediasApi.delete(deleteTarget.id);
-      // toast.success(tc("deleteSuccess") || "路由删除成功");
+      // toast.success(tc("deleteSuccess"));
       // await loadMedias(currentPage, pageSize);
     } catch (error) {
-      console.error("Failed to delete gateway:", error);
-      toast.error(tc("deleteFailed") || "路由删除失败");
+      console.error("Failed to delete media:", error);
+      toast.error(tc("deleteFailed"));
     } finally {
       setIsDeleting(false);
       setDeleteTarget(null);
@@ -179,98 +181,36 @@ export default function MediasPage() {
   // 处理导入
   const handleImport = async (files: File[]) => {
     if (files.length === 0) {
-      toast.error("请选择要导入的文件");
+      toast.error(tm("selectFile") || "请选择要导入的文件");
       return;
     }
 
     setIsImporting(true);
-    let hasSuccess = false;
-    let hasError = false;
 
     try {
-      // 处理每个文件
-      for (const file of files) {
-        await new Promise<void>((resolve, _reject) => {
-          // 读取并解析Excel文件
-          const fileReader = new FileReader();
-          fileReader.readAsArrayBuffer(file);
+      // 使用 FormData 上传所有文件
+      const formData = new FormData();
+      files.forEach((file) => {
+        formData.append("file", file);
+      });
 
-          fileReader.onload = async (event) => {
-            try {
-              const { result } = event.target as FileReader;
+      await mediaFilesApi.upload(formData);
 
-              if (!result) {
-                throw new Error("文件读取失败");
-              }
+      toast.success(tc("uploadSuccess") || `成功上传 ${files.length} 个文件`);
 
-              // 动态导入xlsx库
-              const xlsxModule = await import("xlsx");
-              const XLSX = xlsxModule.default || xlsxModule;
-
-              if (!XLSX || typeof XLSX.read !== "function") {
-                throw new Error("XLSX库加载失败");
-              }
-
-              const workbook = XLSX.read(result, { type: "array" });
-              let data: any[] = [];
-
-              if (workbook && workbook.Sheets) {
-                for (const sheet in workbook.Sheets) {
-                  if (Object.prototype.hasOwnProperty.call(workbook.Sheets, sheet)) {
-                    const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet], {
-                      raw: false,
-                    });
-                    data = data.concat(sheetData);
-                  }
-                }
-              }
-
-              // 发送数据到服务器
-              // const response = await mediasApi.upload({ medias: data });
-
-              // toast.success(
-              //   `文件 ${file.name} 导入成功: ${(response as any).data?.data?.length || 0} 项`,
-              // );
-              hasSuccess = true;
-              resolve();
-            } catch (error) {
-              console.error(`Failed to parse Excel file ${file.name}:`, error);
-              toast.error(`文件 ${file.name} 导入失败: 文件解析错误`);
-              hasError = true;
-              resolve(); // 继续处理下一个文件
-            }
-          };
-
-          fileReader.onerror = () => {
-            console.error(`Failed to read file ${file.name}`);
-            toast.error(`文件 ${file.name} 读取失败`);
-            hasError = true;
-            resolve(); // 继续处理下一个文件
-          };
-        });
-      }
-
-      // 只有全部成功时才关闭弹窗并刷新列表
-      if (hasSuccess && !hasError) {
-        setIsImportModalOpen(false);
-        // 刷新列表
-        await loadMedias(currentPage, pageSize, filters);
-      } else if (hasSuccess && hasError) {
-        // 部分成功，刷新列表但不关闭弹窗
-        await loadMedias(currentPage, pageSize, filters);
-      }
-      // 如果全部失败，保持弹窗打开，不刷新列表
+      // 刷新列表
+      await loadMedias(currentPage, pageSize, filters);
+      setIsImportModalOpen(false);
     } catch (error) {
-      console.error("Failed to import medias:", error);
-      toast.error("导入失败: 网络错误");
-      // 网络错误时保持弹窗打开
+      console.error("Failed to upload media files:", error);
+      toast.error(tm("uploadFailed") || "上传失败");
     } finally {
       setIsImporting(false);
     }
   };
 
   // 处理选择变化
-  const handleSelectionChange = useCallback((selected: Media[]) => {
+  const handleSelectionChange = useCallback((selected: MediaFile[]) => {
     setSelectedMedias(selected);
   }, []);
 
@@ -301,33 +241,26 @@ export default function MediasPage() {
                     }}
                   />
 
-                  {/* <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => void handleExportUsers()}>
-                        <DownloadIcon className="mr-2 h-4 w-4" />
-                        导出
-                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setIsImportModalOpen(true)}
                       >
                         <UploadIcon className="mr-2 h-4 w-4" />
-                        导入
-                      </Button>
-                      <Button size="sm" onClick={() => setIsBatchSettingsOpen(true)}>
-                        批量设置
+                        {tc("upload files") || "上传文件"}
                       </Button>
                     </div>
-                  </div> */}
+                  </div>
 
                   {/* 表格 */}
-                  <ListTable<Media>
+                  <ListTable<MediaFile>
                     columns={mediaColumns}
                     data={medias}
                     isLoading={isLoading}
                     selection
-                    onSelectionChange={(selected) => handleSelectionChange(selected as Media[])}
+                    onSelectionChange={(selected) => handleSelectionChange(selected as MediaFile[])}
                     emptyText={tc("noActions") || "暂无数据"}
                     loadingText={tc("loading") || "加载中..."}
                     translationPrefix="table"
@@ -367,9 +300,8 @@ export default function MediasPage() {
       <ImportDialog
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
-        title="导入"
-        accept=".xlsx, .xls"
-        acceptDescription="仅支持.xls和.xlsx文件"
+        title={tc("upload files") || "上传文件"}
+        accept="*/*"
         onImport={handleImport}
         isLoading={isImporting}
       />

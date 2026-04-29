@@ -88,11 +88,11 @@ export function ImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] w-full max-w-[90vw]">
         <DialogHeader>
           <DialogTitle>{title || t("import")}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-hidden">
           {/* 拖拽上传区域 */}
           <div
             className="border border-dashed rounded-lg p-10 text-center"
@@ -126,21 +126,26 @@ export function ImportDialog({
 
           {/* 文件列表 */}
           {files.length > 0 && (
-            <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
+            <div className="mt-4 space-y-2 max-h-40 overflow-y-auto w-full">
               {files.map((file, index) =>
                 renderFileItem ? (
                   renderFileItem(file, index, removeFile)
                 ) : (
-                  <div key={index} className="flex items-center justify-between rounded-md">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-md border px-3 py-2 w-full"
+                  >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <CloudUploadIcon className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                      <span className="text-sm truncate">{file.name}</span>
+                      <span className="text-sm truncate" title={file.name}>
+                        {file.name}
+                      </span>
                     </div>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
                       onClick={() => removeFile(index)}
-                      className="flex-shrink-0"
+                      className="flex-shrink-0 h-8 w-8"
                     >
                       <XIcon className="h-4 w-4" />
                     </Button>

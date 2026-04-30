@@ -511,7 +511,7 @@ export default function ExtensionDetailsPage() {
     // 处理删除DID
     if (delDids.length > 0) {
       await Promise.all(
-        delDids.map(async (id) => {
+        delDids.map(async (id: any) => {
           try {
             await hotlinesApi.delete(String(id));
             // 从列表中删除

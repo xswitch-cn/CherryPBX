@@ -12,6 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ChevronRight, ChevronLeft, Search } from "lucide-react";
 import { conferencesApi } from "@/lib/api-client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useTranslations } from "next-intl";
 
 export function AddGroupMembersDialog({
   open,
@@ -24,6 +26,7 @@ export function AddGroupMembersDialog({
   roomId: number;
   onMembersAdded?: () => void;
 }) {
+  const t = useTranslations("conference");
   const [groups, setGroups] = useState<any[]>([]);
   const [groupUsers, setGroupUsers] = useState<any[]>([]);
   const [roomMembers, setRoomMembers] = useState<any[]>([]);
@@ -42,18 +45,21 @@ export function AddGroupMembersDialog({
       .getGroups()
       .then((response) => {
         console.log("Groups API response:", response);
-        if (Array.isArray(response.data)) {
-          setGroups(response.data);
-        } else if (response.data && Array.isArray(response.data)) {
-          setGroups(response.data);
+        let groupData = response.data;
+        if (groupData && typeof groupData === "object" && "data" in groupData) {
+          groupData = groupData.data;
+        }
+        if (Array.isArray(groupData)) {
+          setGroups(groupData);
+          console.log("Groups data structure:", JSON.stringify(groupData, null, 2));
         } else {
           setGroups([]);
         }
-        console.log("Groups set to:", groups);
+        console.log("Groups set to:", groupData);
       })
       .catch((error) => {
         console.error("Failed to load groups:", error);
-        toast.error("获取组列表失败");
+        toast.error(t("failedToLoadGroups"));
         setGroups([]);
       })
       .finally(() => {
@@ -77,7 +83,7 @@ export function AddGroupMembersDialog({
         })
         .catch((error) => {
           console.error("Failed to load group users:", error);
-          toast.error("获取组成员失败");
+          toast.error(t("failedToLoadGroupMembers"));
           setGroupUsers([]);
         })
         .finally(() => {
@@ -123,15 +129,21 @@ export function AddGroupMembersDialog({
   }, [open, loadGroups]);
 
   useEffect(() => {
+    console.log("useEffect: step =", step, ", groupId =", groupId);
     if (step === 2 && groupId !== -1) {
       loadGroupUsers(groupId);
       setRoomMembers([]);
     }
   }, [step, groupId, loadGroupUsers]);
 
+  useEffect(() => {
+    console.log("groupId changed to:", groupId);
+  }, [groupId]);
+
   const handleGroupChange = useCallback(
     (value: string) => {
       const selectedGroupId = parseInt(value, 10);
+      console.log("handleGroupChange: selectedGroupId =", selectedGroupId);
       setGroupId(selectedGroupId);
 
       if (selectedGroupId !== -1 && roomId) {
@@ -150,7 +162,7 @@ export function AddGroupMembersDialog({
           })
           .catch((error) => {
             console.error("Failed to load group users:", error);
-            toast.error("获取组成员失败");
+            toast.error(t("failedToLoadGroupMembers"));
             setGroupUsers([]);
           })
           .finally(() => {
@@ -227,6 +239,11 @@ export function AddGroupMembersDialog({
 
   const handleSubmit = useCallback(() => {
     if (!roomId || roomMembers.length === 0) return;
+    if (groupId === -1) {
+      toast.error(t("pleaseSelectGroup"));
+      return;
+    }
+    console.log("Submitting members with groupId:", groupId);
 
     const postMembers = roomMembers.map((member) => ({
       name: member.name,
@@ -238,9 +255,12 @@ export function AddGroupMembersDialog({
       description: member.description || "",
     }));
 
+    console.log("postMembers:", JSON.stringify(postMembers, null, 2));
+
     conferencesApi
       .addMembers(roomId, postMembers)
-      .then(() => {
+      .then((response) => {
+        console.log("Add members response:", response);
         setStep(1);
         setGroupId(-1);
         setSelectedUsers([]);
@@ -248,14 +268,15 @@ export function AddGroupMembersDialog({
         setGroupUsers([]);
         setRoomMembers([]);
         onOpenChange(false);
-        toast.success("添加成功");
+        toast.success(t("addSuccess"));
         if (onMembersAdded) {
+          console.log("Calling onMembersAdded...");
           onMembersAdded();
         }
       })
       .catch((error) => {
         console.error("Failed to add group members:", error);
-        toast.error("添加失败");
+        toast.error(t("addFailed"));
       });
   }, [roomId, roomMembers, groupId, onOpenChange, onMembersAdded]);
 
@@ -271,18 +292,12 @@ export function AddGroupMembersDialog({
       member.extn.toLowerCase().includes(searchRoomMember.toLowerCase()),
   );
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={() => onOpenChange(false)}></div>
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-medium">选择用户组</h3>
-          <button className="text-gray-500 hover:text-gray-700" onClick={() => onOpenChange(false)}>
-            ✕
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg overflow-visible">
+        <DialogHeader>
+          <DialogTitle>{t("selectUserGroup")}</DialogTitle>
+        </DialogHeader>
 
         <div className="flex items-center py-4 border-b px-6">
           <div className="flex items-center gap-2">
@@ -291,7 +306,7 @@ export function AddGroupMembersDialog({
             >
               {step === 1 ? <span>1</span> : <span>✓</span>}
             </div>
-            <span className="text-sm font-medium">选择用户组</span>
+            <span className="text-sm font-medium">{t("selectUserGroup")}</span>
           </div>
           <div className={`h-0.5 w-16 mx-4 ${step >= 2 ? "bg-blue-500" : "bg-gray-200"}`}></div>
           <div className="flex items-center gap-2">
@@ -300,7 +315,7 @@ export function AddGroupMembersDialog({
             >
               <span>2</span>
             </div>
-            <span className="text-sm font-medium">添加成员</span>
+            <span className="text-sm font-medium">{t("addMembers")}</span>
           </div>
         </div>
 
@@ -313,9 +328,9 @@ export function AddGroupMembersDialog({
                   value={groupId === -1 ? undefined : groupId.toString()}
                 >
                   <SelectTrigger className="w-full h-10">
-                    <SelectValue placeholder="选择用户组" />
+                    <SelectValue placeholder={t("selectUserGroup")} />
                   </SelectTrigger>
-                  <SelectContent position="popper" className="w-full">
+                  <SelectContent className="w-full" position="popper" side="bottom">
                     {groups.map((group) => (
                       <SelectItem key={group.id} value={group.id.toString()}>
                         {group.name}
@@ -335,15 +350,17 @@ export function AddGroupMembersDialog({
                       onCheckedChange={handleSelectAllUsers}
                       className="h-4 w-4"
                     />
-                    <span className="text-sm font-medium">{groupUsers.length} 项</span>
+                    <span className="text-sm font-medium">
+                      {groupUsers.length} {t("items")}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">用户</span>
+                  <span className="text-xs text-muted-foreground">{t("users")}</span>
                 </div>
                 <div className="p-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="请输入搜索内容"
+                      placeholder={t("enterSearchContent")}
                       value={searchUser}
                       onChange={(e) => setSearchUser(e.target.value)}
                       className="pl-9 h-9"
@@ -424,15 +441,17 @@ export function AddGroupMembersDialog({
                       onCheckedChange={handleSelectAllRoomMembers}
                       className="h-4 w-4"
                     />
-                    <span className="text-sm font-medium">{roomMembers.length} 项</span>
+                    <span className="text-sm font-medium">
+                      {roomMembers.length} {t("items")}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">会议室</span>
+                  <span className="text-xs text-muted-foreground">{t("conferenceRoom")}</span>
                 </div>
                 <div className="p-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="请输入搜索内容"
+                      placeholder={t("enterSearchContent")}
                       value={searchRoomMember}
                       onChange={(e) => setSearchRoomMember(e.target.value)}
                       className="pl-9 h-9"
@@ -488,7 +507,7 @@ export function AddGroupMembersDialog({
             {step === 1 ? (
               <>
                 <Button variant="outline" className="bg-white" onClick={() => onOpenChange(false)}>
-                  关闭
+                  {t("close")}
                 </Button>
                 <Button
                   onClick={handleNext}
@@ -499,22 +518,29 @@ export function AddGroupMembersDialog({
                       : "bg-gray-500 hover:bg-gray-600"
                   }
                 >
-                  下一步
+                  {t("nextStep")}
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" className="bg-white" onClick={handleSubmit}>
-                  关闭
+                <Button
+                  variant="outline"
+                  className={
+                    roomMembers.length > 0 ? "bg-gray-500 hover:bg-gray-600 text-white" : "bg-white"
+                  }
+                  onClick={handleSubmit}
+                  disabled={roomMembers.length === 0}
+                >
+                  {roomMembers.length > 0 ? t("add") : t("close")}
                 </Button>
                 <Button onClick={handlePrev} variant="outline" className="bg-white">
-                  上一步
+                  {t("prevStep")}
                 </Button>
               </>
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

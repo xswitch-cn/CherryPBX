@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { DynamicFormDialog, FormConfig } from "@/components/dynamic-form-dialog";
 import { conferencesApi } from "@/lib/api-client";
+import { useTranslations } from "next-intl";
 
 export function AddMediaDialog({
   open,
@@ -22,6 +23,7 @@ export function AddMediaDialog({
   roomId: number;
   onNewMediaAdded: (media: any) => void;
 }) {
+  const t = useTranslations("conference");
   const [mediaFiles, setMediaFiles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -42,7 +44,7 @@ export function AddMediaDialog({
       })
       .catch((error) => {
         console.error("Failed to load media files:", error);
-        toast.error("获取媒体文件失败");
+        toast.error(t("failedToLoadMediaFiles"));
       })
       .finally(() => {
         setIsLoading(false);
@@ -80,13 +82,13 @@ export function AddMediaDialog({
             name: mediaFiles.find((file) => file.id === parseInt(data.media_file_id))?.name || "",
           };
           onNewMediaAdded(newMedia);
-          toast.success("添加成功");
+          toast.success(t("addSuccess"));
         } else {
-          throw new Error("添加失败");
+          throw new Error(t("addFailed"));
         }
       } catch (error) {
         console.error("Failed to add media:", error);
-        toast.error("添加失败");
+        toast.error(t("addFailed"));
         throw error;
       }
     },
@@ -98,7 +100,7 @@ export function AddMediaDialog({
     fields: [
       {
         name: "media_file_id",
-        label: "Media File",
+        label: t("mediaFile"),
         type: "select",
         required: true,
         options: mediaFiles.map((file) => ({
@@ -114,11 +116,11 @@ export function AddMediaDialog({
     <DynamicFormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Add New Conference Media"
+      title={t("addNewConferenceMedia")}
       config={formConfig}
       onSubmit={handleSubmit}
-      submitText="Submit"
-      cancelText="Close"
+      submitText={t("submit")}
+      cancelText={t("close")}
       loading={isLoading}
       contentClassName="sm:max-w-[500px]"
     />

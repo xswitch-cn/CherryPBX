@@ -24,6 +24,8 @@ import { DynamicFormDialog, FormConfig } from "@/components/dynamic-form-dialog"
 import { AddGroupMembersDialog } from "../components/AddGroupMembersDialog";
 import { AddMediaDialog } from "../components/AddMediaDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { EditableTable } from "@/components/ui/editable-table";
+import { Edit2Icon, XIcon, PlusIcon } from "lucide-react";
 
 export default function ConferenceDetailPage() {
   const router = useRouter();
@@ -31,7 +33,6 @@ export default function ConferenceDetailPage() {
   const conferenceId = parseInt(params.id || "0");
   const t = useTranslations("pages");
   const tt = useTranslations("conference");
-  const tc = useTranslations("common");
 
   const [conference, setConference] = useState<Conference | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +40,6 @@ export default function ConferenceDetailPage() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [videoModes, setVideoModes] = useState<any[]>([]);
   const [callPermissions, setCallPermissions] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
   const [mediaFiles, setMediaFiles] = useState<any[]>([]);
   const [participants, setParticipants] = useState<any[]>([]);
   const [isAddParticipantOpen, setIsAddParticipantOpen] = useState(false);
@@ -47,19 +47,18 @@ export default function ConferenceDetailPage() {
   const [isAddMediaOpen, setIsAddMediaOpen] = useState(false);
   const [isAllUsersOpen, setIsAllUsersOpen] = useState(false);
   const [isUngroupedOpen, setIsUngroupedOpen] = useState(false);
+  const [isTableEditing, setIsTableEditing] = useState(false);
 
   // 加载conference详情
   const loadConferenceDetail = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 并行获取所有数据
       const [
         conferenceResponse,
         forceDomainResponse,
         profilesResponse,
         videoModesResponse,
         callPermissionsResponse,
-        usersResponse,
         mediaFilesResponse,
         participantsResponse,
       ] = await Promise.all([
@@ -68,7 +67,6 @@ export default function ConferenceDetailPage() {
         conferencesApi.getProfiles(),
         conferencesApi.getVideoModes(),
         conferencesApi.getCallPermissions(),
-        conferencesApi.getUsers(),
         conferencesApi.getMediaFiles(conferenceId),
         conferencesApi.getMembers(conferenceId),
       ]);
@@ -86,11 +84,6 @@ export default function ConferenceDetailPage() {
       setProfiles((profilesResponse.data as any[]) || []);
       setVideoModes((videoModesResponse.data as any[]) || []);
       setCallPermissions((callPermissionsResponse.data as any[]) || []);
-
-      // 处理用户数据，添加空选项
-      const usersData = (usersResponse.data as any[]) || [];
-      usersData.unshift({ id: 0, extn: "----", name: "" });
-      setUsers(usersData);
 
       setMediaFiles((mediaFilesResponse.data as any[]) || []);
 
@@ -206,14 +199,43 @@ export default function ConferenceDetailPage() {
 
   const handleCancel = useCallback(() => {}, []);
 
-  // 返回列表页
+  const handleCancelTableEdit = useCallback(() => {
+    setIsTableEditing(false);
+    if (conference) {
+      conferencesApi
+        .getMembers(conference.id)
+        .then((response) => {
+          const rawData: unknown = response.data;
+          const newParticipants: any[] = Array.isArray((rawData as { data?: unknown[] }).data)
+            ? (rawData as { data: unknown[] }).data
+            : Array.isArray(rawData)
+              ? (rawData as unknown[])
+              : [];
+          setParticipants(newParticipants);
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    }
+  }, [
+	conference,
+	setParticipants,
+	setIsTableEditing
+]);
+
+  const handleMembersAdded = useCallback(async () => {
+    if (!conference) return;
+    const response = await conferencesApi.getMembers(conference.id);
+    setParticipants(((response.data as any).data || response.data) as any[]);
+  }, [conference]);
+
   const handleBack = useCallback(() => {
     router.push("/conference");
   }, [router]);
 
-  // 处理添加与会者
   const handleAddParticipant = useCallback(
     async (data: any) => {
+      console.log("handleAddParticipant called with data:", data);
       if (!conference) {
         toast.error(tt("cannotGetConference"));
         throw new Error("Conference not found");
@@ -229,6 +251,7 @@ export default function ConferenceDetailPage() {
             group_id: 0,
           },
         ];
+        console.log("participantData to submit:", participantData);
 
         await conferencesApi.addMembers(conference.id, participantData);
         toast.success(tt("addSuccess"));
@@ -249,11 +272,22 @@ export default function ConferenceDetailPage() {
     setMediaFiles((prev) => [...prev, media]);
   }, []);
 
-  const handleMembersAdded = useCallback(async () => {
-    if (!conference) return;
-    const response = await conferencesApi.getMembers(conference.id);
-    setParticipants(((response.data as any).data || response.data) as any[]);
-  }, [conference]);
+  // 处理删除媒体文件
+  const handleDeleteMedia = useCallback(
+    async (id: number) => {
+      if (!conference) return;
+      try {
+        await conferencesApi.deleteMedia(conference.id, id);
+        const response = await conferencesApi.getMediaFiles(conference.id);
+        setMediaFiles((response.data as any[]) || []);
+        toast.success(tt("deleteSuccess"));
+      } catch (error) {
+        console.error("Failed to delete media:", error);
+        toast.error(tt("deleteFailed"));
+      }
+    },
+    [conference],
+  );
 
   // 处理设为管理员
   const handleSetAsModerator = useCallback(
@@ -280,26 +314,19 @@ export default function ConferenceDetailPage() {
     async (id: number) => {
       if (!conference) return;
       try {
-        await fetch(`/api/conference_rooms/${conference.id}/members/${id}`, {
-          method: "DELETE",
-        });
-        setParticipants((prev) => prev.filter((p) => p.id !== id));
-
+        await conferencesApi.deleteMember(conference.id, id);
+        const response = await conferencesApi.getMembers(conference.id);
+        const newParticipants = ((response.data as any).data || response.data) as any[];
+        setParticipants(newParticipants);
         toast.success(tt("deleteSuccess"));
       } catch (error) {
-        console.error("Failed to delete participant:", error);
+        console.error("Delete failed:", error);
         toast.error(tt("deleteFailed"));
       }
     },
     [conference],
   );
 
-  // 处理添加与会者成功后的回调
-  const handleMemberAdded = useCallback(async () => {
-    if (!conference) return;
-    const response = await conferencesApi.getMembers(conference.id);
-    setParticipants(((response.data as any).data || response.data) as any[]);
-  }, [conference]);
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
@@ -316,9 +343,7 @@ export default function ConferenceDetailPage() {
         <AppSidebar variant="inset" />
         <SidebarInset>
           <SiteHeader title={t("conference")} />
-          <div className="flex flex-1 flex-col items-center justify-center">
-            {/* <div className="text-center">{t("loading")}</div> */}
-          </div>
+          <div className="flex flex-1 flex-col items-center justify-center"></div>
         </SidebarInset>
       </SidebarProvider>
     );
@@ -566,10 +591,23 @@ export default function ConferenceDetailPage() {
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-medium">{tt("participants")}</h3>
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline">
-                          {tt("edit")}
-                        </Button>
+                        {isTableEditing ? (
+                          <Button variant="outline" size="sm" onClick={handleCancelTableEdit}>
+                            <XIcon className="mr-2 h-4 w-4" />
+                            {tt("cancel")}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsTableEditing(true)}
+                          >
+                            <Edit2Icon className="mr-2 h-4 w-4" />
+                            {tt("edit")}
+                          </Button>
+                        )}
                         <Button size="sm" onClick={() => setIsAddParticipantOpen(true)}>
+                          <PlusIcon className="mr-2 h-4 w-4" />
                           {tt("addParticipant")}
                         </Button>
                         <Button size="sm" onClick={() => setIsAddGroupMembersOpen(true)}>
@@ -592,90 +630,110 @@ export default function ConferenceDetailPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground">
-                              {tt("deleteMember")}
+                              {/* {tt("deleteMember")} */}
                             </span>
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="mt-2">
-                          <div className="border rounded-lg overflow-hidden">
-                            <table className="w-full text-sm">
-                              <thead className="bg-muted">
-                                <tr>
-                                  <th className="px-4 py-3 text-left">{tt("order")}</th>
-                                  <th className="px-4 py-3 text-left">{tt("name")}</th>
-                                  <th className="px-4 py-3 text-left">{tt("number")}</th>
-                                  <th className="px-4 py-3 text-left">{tt("description")}</th>
-                                  <th className="px-4 py-3 text-left">{tt("setAsModerator")}</th>
-                                  <th className="px-4 py-3 text-right">{tt("actions")}</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {participants.filter((p) => p.group_id && Number(p.group_id) > 0)
-                                  .length > 0 ? (
-                                  participants
-                                    .filter((p) => p.group_id && Number(p.group_id) > 0)
-                                    .map((participant, index) => (
-                                      <tr key={participant.id}>
-                                        <td className="px-4 py-3 border-t">{index + 1}</td>
-                                        <td className="px-4 py-3 border-t">{participant.name}</td>
-                                        <td className="px-4 py-3 border-t">{participant.num}</td>
-                                        <td className="px-4 py-3 border-t">
-                                          {participant.description || "-"}
-                                        </td>
-                                        <td className="px-4 py-3 border-t">
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-green-500"
-                                            onClick={() =>
-                                              void handleSetAsModerator(participant.id)
-                                            }
-                                          >
-                                            {tt("setAsModerator")}
-                                          </Button>
-                                        </td>
-                                        <td className="px-4 py-3 border-t text-right">
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-red-500"
-                                            onClick={() =>
-                                              void handleDeleteParticipant(participant.id)
-                                            }
-                                          >
-                                            {t("delete")}
-                                          </Button>
-                                        </td>
-                                      </tr>
-                                    ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan={6} className="px-4 py-10 text-center">
-                                      <div className="flex flex-col items-center justify-center">
-                                        <div className="w-12 h-12 mb-2 text-muted-foreground">
-                                          <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth={1.5}
-                                            stroke="currentColor"
-                                            className="w-12 h-12"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.25-1.5H9.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h7.5c.621 0 1.125-.504 1.125-1.125V10.5a1.125 1.125 0 0 0-1.125-1.125Z"
-                                            />
-                                          </svg>
-                                        </div>
-                                        <p className="text-muted-foreground">{tt("noData")}</p>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
+                          <EditableTable
+                            columns={[
+                              {
+                                key: "name",
+                                header: tt("name"),
+                                type: isTableEditing ? "text" : undefined,
+                              },
+                              {
+                                key: "num",
+                                header: tt("number"),
+                                type: isTableEditing ? "text" : undefined,
+                              },
+                              {
+                                key: "description",
+                                header: tt("description"),
+                                type: isTableEditing ? "text" : undefined,
+                              },
+                              {
+                                key: "setAsModerator",
+                                header: tt("setAsModerator"),
+                                render: (row: any) => (
+                                  <Button
+                                    size="sm"
+                                    variant={row.disabled === "0" ? "default" : "ghost"}
+                                    onClick={() => void handleSetAsModerator(row.id)}
+                                  >
+                                    {row.disabled === "0" ? tt("moderator") : tt("set")}
+                                  </Button>
+                                ),
+                              },
+                              {
+                                key: "action",
+                                header: tt("actions"),
+                                type: "action",
+                                actions: [
+                                  {
+                                    type: "delete",
+                                    label: t("delete"),
+                                  },
+                                ],
+                              },
+                            ]}
+                            data={participants.filter(
+                              (p) =>
+                                p.user_id !== undefined && p.user_id !== null && p.user_id !== "",
+                            )}
+                            getRowId={(row: any) => row.id.toString()}
+                            onDelete={async (_row: any, rowId: string) => {
+                              await handleDeleteParticipant(parseInt(rowId));
+                            }}
+                            onChange={(change) => {
+                              if (!conference) return;
+                              const participantId = parseInt(change.rowId);
+                              const rowData: any = {};
+                              const allowedFields = [
+                                "name",
+                                "num",
+                                "description",
+                                "disabled",
+                                "sort",
+                                "route",
+                                "group_id",
+                              ];
+                              allowedFields.forEach((field) => {
+                                if (
+                                  change.rowData[field] !== undefined &&
+                                  change.rowData[field] !== null
+                                ) {
+                                  rowData[field] = change.rowData[field];
+                                }
+                              });
+                              if (
+                                change.rowData.user_id !== undefined &&
+                                change.rowData.user_id !== null &&
+                                change.rowData.user_id !== ""
+                              ) {
+                                rowData.user_id = parseInt(change.rowData.user_id);
+                              }
+                              fetch(
+                                `/api/conference_rooms/${conference.id}/members/${participantId}`,
+                                {
+                                  method: "PUT",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify(rowData),
+                                },
+                              )
+                                .then(() => {
+                                  toast.success(tt("saveSuccess"));
+                                })
+                                .catch((error) => {
+                                  console.error("Failed to update participant:", error);
+                                  toast.error(tt("saveFailed"));
+                                });
+                            }}
+                            isEditing={isTableEditing}
+                            emptyText={tt("noData")}
+                          />
                         </CollapsibleContent>
                       </Collapsible>
                     </div>
@@ -694,90 +752,110 @@ export default function ConferenceDetailPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground">
-                              {tt("deleteMember")}
+                              {/* {tt("deleteMember")} */}
                             </span>
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="mt-2">
-                          <div className="border rounded-lg overflow-hidden">
-                            <table className="w-full text-sm">
-                              <thead className="bg-muted">
-                                <tr>
-                                  <th className="px-4 py-3 text-left">{tt("order")}</th>
-                                  <th className="px-4 py-3 text-left">{tt("name")}</th>
-                                  <th className="px-4 py-3 text-left">{tt("number")}</th>
-                                  <th className="px-4 py-3 text-left">{tt("description")}</th>
-                                  <th className="px-4 py-3 text-left">{tt("setAsModerator")}</th>
-                                  <th className="px-4 py-3 text-right">{tt("actions")}</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {participants.filter((p) => !p.group_id || Number(p.group_id) === 0)
-                                  .length > 0 ? (
-                                  participants
-                                    .filter((p) => !p.group_id || Number(p.group_id) === 0)
-                                    .map((participant, index) => (
-                                      <tr key={participant.id}>
-                                        <td className="px-4 py-3 border-t">{index + 1}</td>
-                                        <td className="px-4 py-3 border-t">{participant.name}</td>
-                                        <td className="px-4 py-3 border-t">{participant.num}</td>
-                                        <td className="px-4 py-3 border-t">
-                                          {participant.description || "-"}
-                                        </td>
-                                        <td className="px-4 py-3 border-t">
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-green-500"
-                                            onClick={() =>
-                                              void handleSetAsModerator(participant.id)
-                                            }
-                                          >
-                                            {tt("setAsModerator")}
-                                          </Button>
-                                        </td>
-                                        <td className="px-4 py-3 border-t text-right">
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-red-500"
-                                            onClick={() =>
-                                              void handleDeleteParticipant(participant.id)
-                                            }
-                                          >
-                                            {t("delete")}
-                                          </Button>
-                                        </td>
-                                      </tr>
-                                    ))
-                                ) : (
-                                  <tr>
-                                    <td colSpan={6} className="px-4 py-10 text-center">
-                                      <div className="flex flex-col items-center justify-center">
-                                        <div className="w-12 h-12 mb-2 text-muted-foreground">
-                                          <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            strokeWidth={1.5}
-                                            stroke="currentColor"
-                                            className="w-12 h-12"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.25-1.5H9.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h7.5c.621 0 1.125-.504 1.125-1.125V10.5a1.125 1.125 0 0 0-1.125-1.125Z"
-                                            />
-                                          </svg>
-                                        </div>
-                                        <p className="text-muted-foreground">{tt("noData")}</p>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
-                              </tbody>
-                            </table>
-                          </div>
+                          <EditableTable
+                            columns={[
+                              {
+                                key: "name",
+                                header: tt("name"),
+                                type: isTableEditing ? "text" : undefined,
+                              },
+                              {
+                                key: "num",
+                                header: tt("number"),
+                                type: isTableEditing ? "text" : undefined,
+                              },
+                              {
+                                key: "description",
+                                header: tt("description"),
+                                type: isTableEditing ? "text" : undefined,
+                              },
+                              {
+                                key: "setAsModerator",
+                                header: tt("setAsModerator"),
+                                render: (row: any) => (
+                                  <Button
+                                    size="sm"
+                                    variant={row.disabled === "0" ? "default" : "ghost"}
+                                    onClick={() => void handleSetAsModerator(row.id)}
+                                  >
+                                    {row.disabled === "0" ? tt("moderator") : tt("set")}
+                                  </Button>
+                                ),
+                              },
+                              {
+                                key: "action",
+                                header: tt("actions"),
+                                type: "action",
+                                actions: [
+                                  {
+                                    type: "delete",
+                                    label: t("delete"),
+                                  },
+                                ],
+                              },
+                            ]}
+                            data={participants.filter(
+                              (p) =>
+                                p.user_id === undefined || p.user_id === null || p.user_id === "",
+                            )}
+                            getRowId={(row: any) => row.id.toString()}
+                            onDelete={async (_row: any, rowId: string) => {
+                              await handleDeleteParticipant(parseInt(rowId));
+                            }}
+                            onChange={(change) => {
+                              if (!conference) return;
+                              const participantId = parseInt(change.rowId);
+                              const rowData: any = {};
+                              const allowedFields = [
+                                "name",
+                                "num",
+                                "description",
+                                "disabled",
+                                "sort",
+                                "route",
+                                "group_id",
+                              ];
+                              allowedFields.forEach((field) => {
+                                if (
+                                  change.rowData[field] !== undefined &&
+                                  change.rowData[field] !== null
+                                ) {
+                                  rowData[field] = change.rowData[field];
+                                }
+                              });
+                              if (
+                                change.rowData.user_id !== undefined &&
+                                change.rowData.user_id !== null &&
+                                change.rowData.user_id !== ""
+                              ) {
+                                rowData.user_id = parseInt(change.rowData.user_id);
+                              }
+                              fetch(
+                                `/api/conference_rooms/${conference.id}/members/${participantId}`,
+                                {
+                                  method: "PUT",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify(rowData),
+                                },
+                              )
+                                .then(() => {
+                                  toast.success(tt("saveSuccess"));
+                                })
+                                .catch((error) => {
+                                  console.error("Failed to update participant:", error);
+                                  toast.error(tt("saveFailed"));
+                                });
+                            }}
+                            isEditing={isTableEditing}
+                            emptyText={tt("noData")}
+                          />
                         </CollapsibleContent>
                       </Collapsible>
                     </div>
@@ -811,7 +889,11 @@ export default function ConferenceDetailPage() {
                                     <td className="px-4 py-3 border-t">{file.id}</td>
                                     <td className="px-4 py-3 border-t">{file.name}</td>
                                     <td className="px-4 py-3 border-t text-right">
-                                      <Button size="sm" variant="ghost" className="text-red-500">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => void handleDeleteMedia(file.id)}
+                                      >
                                         {t("delete")}
                                       </Button>
                                     </td>

@@ -104,7 +104,7 @@ export function createMediaColumns({
               </DropdownMenuItem> */}
               <DropdownMenuItem
                 onClick={() => {
-                  router.push(`/routes/${row.original.id}`);
+                  router.push(`/media/${row.original.id}`);
                 }}
               >
                 {tc("Details")}

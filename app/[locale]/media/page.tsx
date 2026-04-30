@@ -42,9 +42,6 @@ export default function MediasPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [selectedMedias, setSelectedMedias] = useState<any[]>([]);
-
-  console.log(selectedMedias, "//...selectedMedias");
 
   const mediaColumns = createMediaColumns({
     t: tm,
@@ -102,9 +99,9 @@ export default function MediasPage() {
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
-      // await mediasApi.delete(deleteTarget.id);
-      // toast.success(tc("deleteSuccess"));
-      // await loadMedias(currentPage, pageSize);
+      await mediaFilesApi.delete(deleteTarget.id);
+      toast.success(tc("deleteSuccess"));
+      await loadMedias(currentPage, pageSize);
     } catch (error) {
       console.error("Failed to delete media:", error);
       toast.error(tc("deleteFailed"));
@@ -209,11 +206,6 @@ export default function MediasPage() {
     }
   };
 
-  // 处理选择变化
-  const handleSelectionChange = useCallback((selected: MediaFile[]) => {
-    setSelectedMedias(selected);
-  }, []);
-
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
@@ -260,7 +252,6 @@ export default function MediasPage() {
                     data={medias}
                     isLoading={isLoading}
                     selection
-                    onSelectionChange={(selected) => handleSelectionChange(selected as MediaFile[])}
                     emptyText={tc("noActions") || "暂无数据"}
                     loadingText={tc("loading") || "加载中..."}
                     translationPrefix="table"

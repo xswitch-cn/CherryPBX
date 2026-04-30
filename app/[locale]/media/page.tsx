@@ -13,8 +13,9 @@ import { mediaFilesApi } from "@/lib/api-client";
 import { type MediaFile, type ListMediaFilesQuery } from "@repo/api-client";
 import { createMediaColumns } from "./media-columns";
 import { toast } from "sonner";
-import { UploadIcon } from "lucide-react";
+import { UploadIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AddTtsDialog } from "./components/add-tts-dialog";
 
 // 每页显示数量
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -42,6 +43,7 @@ export default function MediasPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const mediaColumns = createMediaColumns({
     t: tm,
@@ -206,6 +208,17 @@ export default function MediasPage() {
     }
   };
 
+  const handleCreate = async (data: any) => {
+    try {
+      await mediaFilesApi.addTts(data);
+      toast.success(tc("createSuccess"));
+      await loadMedias(1, pageSize, filters);
+    } catch (error) {
+      console.error("Failed to create media:", error);
+      toast.error(tc("createFailed"));
+    }
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
@@ -242,6 +255,11 @@ export default function MediasPage() {
                       >
                         <UploadIcon className="mr-2 h-4 w-4" />
                         {tc("upload files") || "上传文件"}
+                      </Button>
+
+                      <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                        <PlusIcon className="mr-2 h-4 w-4" />
+                        TTS
                       </Button>
                     </div>
                   </div>
@@ -295,6 +313,13 @@ export default function MediasPage() {
         accept="*/*"
         onImport={handleImport}
         isLoading={isImporting}
+      />
+
+      {/* 新增TTS */}
+      <AddTtsDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreate}
       />
     </SidebarProvider>
   );

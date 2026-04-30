@@ -279,7 +279,7 @@ export function EditableField({
           )}
         />
       ) : (
-        <div className="min-h-[2.25rem] py-1 text-sm">
+        <div className="min-h-[2.25rem] py-1 text-sm overflow-hidden line-clamp-2 text-ellipsis">
           {type === "multi-select" && Array.isArray(value)
             ? value.length > 0
               ? value

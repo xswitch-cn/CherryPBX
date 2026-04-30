@@ -10,6 +10,7 @@ import { type MediaFile } from "@repo/api-client";
 import { mediaFilesApi, routesApi } from "@/lib/api-client";
 import { toast } from "sonner";
 import { EditableSection, EditableField } from "@/components/ui/editable-section";
+import { formatSizeUnits } from "@/lib/utils";
 
 interface MediaDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -65,16 +66,16 @@ export default function MediaDetailsPage({ params }: MediaDetailsPageProps) {
   }
 
   const handleSave = async (finalData: any) => {
-    //   try {
-    //     await licenseApi.update(licenseId, finalData);
-    //     await loadLicenseDetail();
-    //     toast.success(tc("saveSuccess"));
-    //     return true;
-    //   } catch (error) {
-    //     console.error("Failed to save route:", error);
-    //     toast.error(tc("saveFailed"));
-    //     return false;
-    //   }
+    try {
+      await mediaFilesApi.update(mediaId, { ...finalData, id: mediaId });
+      await loadMediaDetail();
+      toast.success(tc("saveSuccess"));
+      return true;
+    } catch (error) {
+      console.error("Failed to save route:", error);
+      toast.error(tc("saveFailed"));
+      return false;
+    }
   };
 
   return (
@@ -123,7 +124,11 @@ export default function MediaDetailsPage({ params }: MediaDetailsPageProps) {
               className="md:col-span-2"
             />
             <EditableField label={tm("Ext")} value={media?.ext} type="text" />
-            <EditableField label={tm("size")} value={media?.file_size} type="text" />
+            <EditableField
+              label={tm("size")}
+              value={formatSizeUnits(media?.file_size)}
+              type="text"
+            />
             <EditableField label={tm("MIME")} value={media?.mime} type="text" />
             <EditableField
               label={tm("Original File Name")}

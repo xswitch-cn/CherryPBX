@@ -1289,7 +1289,10 @@
     "Channel UUID": "通道UUID",
     "Absolute Path": "绝对路径",
 	  "Relative Path": "相对路径",
-    "Directory": "文件夹"
+    "Directory": "文件夹",
+    "TTS Engine": "TTS引擎",
+	  "TTS Sound": "TTS声音",
+	  "TTS Text": "TTS文本"
   },
   "ipBlacklist": {
     "addIp": "添加IP",

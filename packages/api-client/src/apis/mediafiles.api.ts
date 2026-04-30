@@ -83,6 +83,14 @@ export function createMediaFilesApi(client: ApiClient) {
       });
     },
 
+    addTts(data: { engine: string; input: string }) {
+      return client.request<MediaFile>({
+        method: "POST",
+        path: `/api/${data.engine}/tts`,
+        body: data,
+      });
+    },
+
     /**
      * 上传媒体文件
      */

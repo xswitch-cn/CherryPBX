@@ -44,7 +44,12 @@ export default function NumberTransformDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [addFormData, setAddFormData] = useState({ original_number: "", nts_number: "" });
+  const [addFormData, setAddFormData] = useState({
+    id: "",
+    type: "exact",
+    original_number: "",
+    nts_number: "",
+  });
   const [importText, setImportText] = useState("");
 
   const loadTransform = useCallback(async () => {
@@ -98,19 +103,21 @@ export default function NumberTransformDetailPage() {
 
   // 处理添加号码
   const handleAddNumber = async () => {
-    if (!addFormData.original_number || !addFormData.nts_number) {
+    if (!addFormData.id || !addFormData.original_number || !addFormData.nts_number) {
       toast.error(ttt("pleaseFillRequiredFields"));
       return;
     }
     try {
       setLoading(true);
       await numberTransformApi.createNumber(parseInt(transformId, 10), {
+        id: addFormData.id,
+        type: addFormData.type,
         original_number: addFormData.original_number,
         nts_number: addFormData.nts_number,
       });
       toast.success(ttt("addSuccess"));
       setAddDialogOpen(false);
-      setAddFormData({ original_number: "", nts_number: "" });
+      setAddFormData({ id: "", type: "exact", original_number: "", nts_number: "" });
       await loadTransform();
     } catch (error: any) {
       console.error("Failed to add number:", error);
@@ -156,7 +163,7 @@ export default function NumberTransformDetailPage() {
 
   // 打开添加弹窗
   const openAddDialog = () => {
-    setAddFormData({ original_number: "", nts_number: "" });
+    setAddFormData({ id: "", type: "exact", original_number: "", nts_number: "" });
     setAddDialogOpen(true);
   };
 
@@ -353,6 +360,32 @@ export default function NumberTransformDetailPage() {
             <DialogDescription>{t("addNumberDescription")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="number_id" className="text-right">
+                {t("id")} *
+              </Label>
+              <Input
+                id="number_id"
+                value={addFormData.id}
+                onChange={(e) => setAddFormData({ ...addFormData, id: e.target.value })}
+                className="col-span-3"
+                placeholder={t("id")}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="number_type" className="text-right">
+                {t("type")}
+              </Label>
+              <select
+                id="number_type"
+                value={addFormData.type}
+                onChange={(e) => setAddFormData({ ...addFormData, type: e.target.value })}
+                className="col-span-3 px-3 py-2 border rounded-md"
+              >
+                <option value="exact">{t("exactMatch")}</option>
+                <option value="prefix">{t("prefixMatch")}</option>
+              </select>
+            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="original_number" className="text-right">
                 {t("originalNumber")} *

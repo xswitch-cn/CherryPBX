@@ -100,6 +100,10 @@ export type {
 } from "./apis/time-rules.api";
 export type { MediaFile, ListMediaFilesQuery, ListMediaFilesResponse } from "./apis/mediafiles.api";
 
+export { createLogsApi } from "./apis/logs.api";
+export type { LogConfig, LogSetting, LogsApi } from "./apis/logs.api";
+export type { LogParam, LogMap } from "./apis/logs.api";
+
 export type {
   Gateway,
   ListGatewaysQuery,

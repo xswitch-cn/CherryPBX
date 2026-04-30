@@ -32,7 +32,7 @@ export function CreateLogSettingDialog({
     if (!k.trim() || !v.trim()) {
       return;
     }
-     onSubmit({ k: k.trim(), v: v.trim() });
+    onSubmit({ k: k.trim(), v: v.trim() });
     setK("");
     setV("");
   }, [k, v, onSubmit]);

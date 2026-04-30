@@ -87,6 +87,11 @@ export interface ConferencesApi {
     roomId: number | string,
     memberId: number | string,
   ): ReturnType<ApiClient["request"]>;
+  deleteMember(
+    roomId: number | string,
+    memberId: number | string,
+  ): ReturnType<ApiClient["request"]>;
+  deleteMedia(roomId: number | string, mediaId: number | string): ReturnType<ApiClient["request"]>;
 }
 
 export function createConferencesApi(client: ApiClient): ConferencesApi {
@@ -228,6 +233,20 @@ export function createConferencesApi(client: ApiClient): ConferencesApi {
       return client.request({
         method: "PUT",
         path: `/api/conference_rooms/moderator/${roomId}/${memberId}`,
+      });
+    },
+
+    deleteMember(roomId: number | string, memberId: number | string) {
+      return client.request({
+        method: "DELETE",
+        path: `/api/conference_rooms/${roomId}/members/${memberId}`,
+      });
+    },
+
+    deleteMedia(roomId: number | string, mediaId: number | string) {
+      return client.request({
+        method: "DELETE",
+        path: `/api/conference_rooms/${roomId}/media_files/${mediaId}`,
       });
     },
   };

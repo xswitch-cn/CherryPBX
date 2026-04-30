@@ -465,6 +465,7 @@ export function EditableTable<TData extends Record<string, unknown>>({
 
   const handleConfirmDelete = async (row: TData, rowId: string) => {
     setIsDeleting(true);
+    setDeleteDialogOpen(false);
     try {
       await onDelete?.(row, rowId);
       // 从本地状态中移除已删除的行

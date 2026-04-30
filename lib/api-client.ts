@@ -111,7 +111,6 @@ export const apiClient: ApiClient = createClient({
   },
 });
 
-// 导出各个 API 模块的单例实例
 export const routesApi = createRoutesApi(apiClient);
 export const gatewaysApi = createGatewaysApi(apiClient);
 export const usersApi = createUsersApi(apiClient);
@@ -131,7 +130,6 @@ export const numberTransformApi = createNumberTransformApi(apiClient);
 export const timeRulesApi = createTimeRulesApi(apiClient);
 export const logsApi = createLogsApi(apiClient);
 
-// 导出常用类型
 export type {
   ApiClient,
   TokenStore,

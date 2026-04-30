@@ -33,7 +33,7 @@ export function CreateLogConfigDialog({
     if (!name.trim()) {
       return;
     }
-     onSubmit({ name: name.trim(), description: description.trim() || undefined });
+    onSubmit({ name: name.trim(), description: description.trim() || undefined });
     setName("");
     setDescription("");
   }, [name, description, onSubmit]);

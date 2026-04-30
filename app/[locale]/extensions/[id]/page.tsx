@@ -513,7 +513,7 @@ export default function ExtensionDetailsPage() {
       await Promise.all(
         delDids.map(async (id) => {
           try {
-            await hotlinesApi.delete(id);
+            await hotlinesApi.delete(String(id));
             // 从列表中删除
             setDidsGroup((prev) => prev.filter((item) => item.id !== id));
           } catch (error) {

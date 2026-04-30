@@ -96,7 +96,10 @@
     "logs": "系统日志",
     "diagnostics": "故障诊断",
     "backup": "备份还原",
-    "documents": "文档"
+    "documents": "文档",
+    "basicInfo": "基本信息",
+    "submit": "提交",
+    "delete": "删除"
   },
   "table": {
     "search": "搜索...",
@@ -1169,7 +1172,25 @@
     "addSuccess": "添加成功",
     "addFailed": "添加失败",
     "mediaFiles": "媒体文件",
-    "addMediaFile": "添加媒体文件"
+    "addMediaFile": "添加媒体文件",
+    "cancel": "取消",
+    "set": "设置",
+    "mediaFile": "媒体文件",
+    "addNewConferenceMedia": "添加新的会议媒体",
+    "submit": "提交",
+    "failedToLoadMediaFiles": "获取媒体文件失败",
+    "selectUserGroup": "选择用户组",
+    "addMembers": "添加成员",
+    "failedToLoadGroups": "获取组列表失败",
+    "failedToLoadGroupMembers": "获取组成员失败",
+    "pleaseSelectGroup": "请先选择用户组",
+    "items": "项",
+    "users": "用户",
+    "conferenceRoom": "会议室",
+    "enterSearchContent": "请输入搜索内容",
+    "nextStep": "下一步",
+    "prevStep": "上一步",
+    "add": "添加"
   },
   "sip": {
     "addSip": "添加SIP",
@@ -1607,10 +1628,6 @@
     "uploadFailed": "上传失败",
     "control": "控制",
     "createParam": "创建参数",
-    "description": "描述",
-    "Add Param": "添加参数",
-    "play": "播放",
-    "UPLOAD": "上传",
-    "SYSTEM": "系统"
-  }
+    "description": "描述"
+    }
 }

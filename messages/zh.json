@@ -1261,7 +1261,14 @@
     "noMedia": "未找到媒体文件。",
     "deleteMedia": "删除媒体文件",
     "deletedMedia": "已删除媒体：{name}",
-    "supportedFormats": "支持的格式：WAV, MP3, OGG, MP4, AVI"
+    "supportedFormats": "支持的格式：WAV, MP3, OGG, MP4, AVI",
+    "Ext": "扩展名",
+    "MIME": "MIME类型",
+    "Original File Name": "原始文件名",
+    "Channel UUID": "通道UUID",
+    "Absolute Path": "绝对路径",
+	  "Relative Path": "相对路径",
+    "Directory": "文件夹"
   },
   "ipBlacklist": {
     "addIp": "添加IP",
@@ -1504,6 +1511,7 @@
     "selectedCount": "已选择 {count}",
     "nameRequired": "名称必填",
     "createdAt": "创建时间",
+    "updatedAt": "更新时间",
     "Audio": "音频",
     "Video": "视频",
     "select": "选择",

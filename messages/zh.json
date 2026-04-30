@@ -1517,6 +1517,9 @@
     "control": "控制",
     "createParam": "创建参数",
     "description": "描述",
-    "Add Param": "添加参数"
+    "Add Param": "添加参数",
+    "play": "播放",
+    "UPLOAD": "上传",
+    "SYSTEM": "系统"
     }
 }

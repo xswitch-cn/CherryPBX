@@ -11,7 +11,7 @@ interface AudioState {
 let lastXAudio: AudioState | null = null;
 
 export interface AudioPlayerProps {
-  text: string;
+  text?: string;
   url: string;
   className?: string;
 }
@@ -184,10 +184,6 @@ export function AudioPlayer({ text, url, className }: AudioPlayerProps) {
     };
   }, [cleanupAudio]);
 
-  if (!text) {
-    return null;
-  }
-
   return (
     <button
       type="button"
@@ -209,7 +205,7 @@ export function AudioPlayer({ text, url, className }: AudioPlayerProps) {
       ) : (
         <PlayCircle className="h-4 w-4" />
       )}
-      <span>{text}</span>
+      {text && <span>{text}</span>}
       {checked && <Loader2 className="h-4 w-4 animate-spin" />}
     </button>
   );

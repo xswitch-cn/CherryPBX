@@ -12,6 +12,8 @@ import {
 import { EllipsisVerticalIcon, RouteIcon } from "lucide-react";
 import { type MediaFile } from "@repo/api-client";
 import { useRouter } from "@/navigation";
+import { AudioPlayer } from "@/components/ui/audio-player";
+import { formatSizeUnits } from "@/lib/utils";
 
 interface TranslationFunctions {
   t: (key: string, params?: Record<string, any>) => string;
@@ -43,10 +45,16 @@ export function createMediaColumns({
     {
       accessorKey: "type",
       header: () => t("type"),
+      cell: ({ row }) => (
+        <span className="capitalize">{row?.original?.type ? tc(row?.original?.type) : "-"}</span>
+      ),
     },
     {
       accessorKey: "file_size",
       header: () => t("size"),
+      cell: ({ row }) => (
+        <span className="capitalize">{formatSizeUnits(row.original.file_size)}</span>
+      ),
     },
     {
       accessorKey: "created_at",
@@ -55,6 +63,14 @@ export function createMediaColumns({
     {
       accessorKey: "description",
       header: () => tc("description"),
+    },
+    {
+      accessorKey: "audio",
+      header: () => tc("play"),
+      cell: ({ row }) => {
+        const audioUrl = `/api/media_files/${row.original.id}.${row.original.ext}`;
+        return <AudioPlayer url={audioUrl} />;
+      },
     },
     {
       id: "actions",

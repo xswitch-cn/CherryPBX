@@ -93,7 +93,10 @@ export function createNumberTransformApi(client: ApiClient) {
     },
 
     // 号码列表相关操作
-    createNumber(ruleId: number, data: { original_number: string; nts_number: string }) {
+    createNumber(
+      ruleId: number,
+      data: { id: string; type: string; original_number: string; nts_number: string },
+    ) {
       return client.request<NumberTransformItem>({
         method: "POST",
         path: `/api/number_translation/${encodeURIComponent(ruleId)}/numbers`,

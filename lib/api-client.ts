@@ -33,6 +33,7 @@ import {
   createMediaFilesApi,
   createNumberTransformApi,
   createTimeRulesApi,
+  createLogsApi,
   type Hotline,
   type DOD,
   type ListHotlinesResponse,
@@ -67,6 +68,11 @@ import {
   type ListTimeRulesResponse,
   type TimeRulesApi,
   type TimeResponse,
+  type LogConfig,
+  type LogSetting,
+  type LogParam,
+  type LogMap,
+  type LogsApi,
 } from "@repo/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 
@@ -122,6 +128,7 @@ export const conferencesApi = createConferencesApi(apiClient);
 export const sipApi = createSipApi(apiClient);
 export const numberTransformApi = createNumberTransformApi(apiClient);
 export const timeRulesApi = createTimeRulesApi(apiClient);
+export const logsApi = createLogsApi(apiClient);
 
 export type {
   ApiClient,
@@ -174,4 +181,9 @@ export type {
   ListTimeRulesResponse,
   TimeRulesApi,
   TimeResponse,
+  LogConfig,
+  LogSetting,
+  LogParam,
+  LogMap,
+  LogsApi,
 };

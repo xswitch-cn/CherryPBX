@@ -53,7 +53,7 @@ export function createMediaFilesApi(client: ApiClient) {
       });
     },
 
-    getById(id: number) {
+    getById(id: string) {
       return client.request<MediaFile>({
         method: "GET",
         path: `/api/media_files/${encodeURIComponent(id)}`,
@@ -68,7 +68,7 @@ export function createMediaFilesApi(client: ApiClient) {
       });
     },
 
-    update(id: number, data: Partial<MediaFile>) {
+    update(id: string, data: Partial<MediaFile>) {
       return client.request<MediaFile>({
         method: "PUT",
         path: `/api/media_files/${encodeURIComponent(id)}`,

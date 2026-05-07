@@ -9,8 +9,9 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ListFilterForm, ListTable, ListPagination } from "@/components/ui/list-components";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { ImportDialog } from "@/components/ui/import-dialog";
-import { mediaFilesApi } from "@/lib/api-client";
-import { type MediaFile, type ListMediaFilesQuery } from "@repo/api-client";
+import { CustomTypeDialog } from "./components/custom-type-dialog";
+import { mediaFilesApi, routesApi } from "@/lib/api-client";
+import { type MediaFile, type ListMediaFilesQuery, type DictItem } from "@repo/api-client";
 import { createMediaColumns } from "./media-columns";
 import { toast } from "sonner";
 import { UploadIcon, PlusIcon } from "lucide-react";
@@ -44,6 +45,8 @@ export default function MediasPage() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCustomTypeDialogOpen, setIsCustomTypeDialogOpen] = useState(false);
+  const [customTypes, setCustomTypes] = useState<DictItem[]>([]);
 
   const mediaColumns = createMediaColumns({
     t: tm,
@@ -55,7 +58,7 @@ export default function MediasPage() {
       setIsDeleteDialogOpen(true);
     },
     onRefresh: async () => {
-      await loadMedias();
+      await loadCustomTypes();
     },
   });
 
@@ -137,6 +140,12 @@ export default function MediasPage() {
     [loadMedias, pageSize],
   );
 
+  // 加载自定义类型列表
+  const loadCustomTypes = async () => {
+    const response = await routesApi.getDicts("MFILE_TYPE");
+    setCustomTypes(response.data || []);
+  };
+
   // 初始化加载
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -146,6 +155,7 @@ export default function MediasPage() {
     }
 
     void loadMedias();
+    void loadCustomTypes();
   }, [router, loadMedias]);
 
   // 处理导出
@@ -256,7 +266,13 @@ export default function MediasPage() {
                         <UploadIcon className="mr-2 h-4 w-4" />
                         {tc("upload files") || "上传文件"}
                       </Button>
-
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsCustomTypeDialogOpen(true)}
+                      >
+                        自定义类型
+                      </Button>
                       <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
                         <PlusIcon className="mr-2 h-4 w-4" />
                         TTS
@@ -320,6 +336,14 @@ export default function MediasPage() {
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSubmit={handleCreate}
+      />
+
+      {/* 自定义类型管理 */}
+      <CustomTypeDialog
+        open={isCustomTypeDialogOpen}
+        onOpenChange={setIsCustomTypeDialogOpen}
+        onRefresh={() => void loadCustomTypes()}
+        customTypes={customTypes}
       />
     </SidebarProvider>
   );

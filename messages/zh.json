@@ -1292,7 +1292,9 @@
     "Directory": "文件夹",
     "TTS Engine": "TTS引擎",
 	  "TTS Sound": "TTS声音",
-	  "TTS Text": "TTS文本"
+	  "TTS Text": "TTS文本",
+    "customType": "自定义类型",
+    "typeName": "类型名称"
   },
   "ipBlacklist": {
     "addIp": "添加IP",
@@ -1619,6 +1621,7 @@
     "nameRequired": "名称必填",
     "createdAt": "创建时间",
     "updatedAt": "更新时间",
+    "play": "播放",
     "Audio": "音频",
     "Video": "视频",
     "select": "选择",
@@ -1629,6 +1632,8 @@
     "Import Success": "导入成功",
     "uploadSuccess": "上传成功",
     "uploadFailed": "上传失败",
+    "UPLOAD": "上传",
+    "SYSTEM": "系统",
     "control": "控制",
     "createParam": "创建参数",
     "description": "描述"

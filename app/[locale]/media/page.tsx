@@ -14,7 +14,7 @@ import { mediaFilesApi, routesApi } from "@/lib/api-client";
 import { type MediaFile, type ListMediaFilesQuery, type DictItem } from "@repo/api-client";
 import { createMediaColumns } from "./media-columns";
 import { toast } from "sonner";
-import { UploadIcon, PlusIcon } from "lucide-react";
+import { UploadIcon, PlusIcon, DownloadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddTtsDialog } from "./components/add-tts-dialog";
 
@@ -46,6 +46,8 @@ export default function MediasPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCustomTypeDialogOpen, setIsCustomTypeDialogOpen] = useState(false);
+  const [selectedMedias, setSelectedMedias] = useState<MediaFile[]>([]);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [customTypes, setCustomTypes] = useState<DictItem[]>([]);
 
   const mediaColumns = createMediaColumns({
@@ -158,35 +160,6 @@ export default function MediasPage() {
     void loadCustomTypes();
   }, [router, loadMedias]);
 
-  // 处理导出
-  // const handleExportUsers = useCallback(async () => {
-  //   const lang = document.documentElement.lang || "zh";
-
-  //   try {
-  //     const response = await mediasApi.download({
-  //       language: lang,
-  //       type: "All Route",
-  //       ...filters,
-  //     });
-
-  //     const data = response.data as any[];
-  //     data.sort((a: any, b: any) => {
-  //       return a[0] - b[0];
-  //     });
-
-  //     void import("xlsx").then((XLSX) => {
-  //       const wb = XLSX.utils.book_new();
-  //       const ws = XLSX.utils.aoa_to_sheet([...data]);
-  //       XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-  //       XLSX.writeFile(wb, "users_download.xlsx", { compression: true });
-  //       toast.success("下载成功");
-  //     });
-  //   } catch (error) {
-  //     console.error("Failed to download users:", error);
-  //     toast.error("下载用户失败");
-  //   }
-  // }, [filters]);
-
   // 处理导入
   const handleImport = async (files: File[]) => {
     if (files.length === 0) {
@@ -226,6 +199,56 @@ export default function MediasPage() {
     } catch (error) {
       console.error("Failed to create media:", error);
       toast.error(tc("createFailed"));
+    }
+  };
+
+  // 处理批量下载
+  const handleBatchDownload = async () => {
+    if (selectedMedias.length === 0) {
+      toast.info(tc("pleaseSelectDownload") || "请选择要下载的文件");
+      return;
+    }
+
+    if (selectedMedias.length > 10) {
+      toast.info(tc("batchDownloadHint") || "批量下载数量较多，请耐心等待");
+    }
+
+    setIsDownloading(true);
+
+    try {
+      // 逐个下载文件
+      for (const media of selectedMedias) {
+        const ext = media.ext || "mp3";
+        const src = `/api/media_files/${media.id}.${ext}`;
+
+        // 格式化日期
+        const createdAt = media.created_at || "";
+        const dateStr = createdAt
+          ? new Date(createdAt).toISOString().slice(0, 19).replace(/[T:]/g, "-")
+          : "";
+
+        // 构建文件名
+        let fileName = media.name || `media_${media.id}`;
+        if (!fileName.endsWith(`.${ext}`)) {
+          fileName += `.${ext}`;
+        }
+
+        // 下载文件
+        const downloadLink = document.createElement("a");
+        downloadLink.href = src;
+        downloadLink.download = dateStr ? `${dateStr}-${fileName}` : fileName;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        // 每个下载之间稍微延迟，避免浏览器阻止多个下载
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+    } catch (error) {
+      console.error("Failed to download files:", error);
+      toast.error(tc("downloadFailed") || "下载失败");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -271,11 +294,20 @@ export default function MediasPage() {
                         size="sm"
                         onClick={() => setIsCustomTypeDialogOpen(true)}
                       >
-                        自定义类型
+                        {tm("customType")}
                       </Button>
                       <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
                         <PlusIcon className="mr-2 h-4 w-4" />
                         TTS
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={selectedMedias.length === 0 || isDownloading}
+                        onClick={() => void handleBatchDownload()}
+                      >
+                        <DownloadIcon className="mr-2 h-4 w-4" />
+                        {tc("export") || "导出"}
                       </Button>
                     </div>
                   </div>
@@ -286,6 +318,7 @@ export default function MediasPage() {
                     data={medias}
                     isLoading={isLoading}
                     selection
+                    onSelectionChange={setSelectedMedias}
                     emptyText={tc("noActions") || "暂无数据"}
                     loadingText={tc("loading") || "加载中..."}
                     translationPrefix="table"

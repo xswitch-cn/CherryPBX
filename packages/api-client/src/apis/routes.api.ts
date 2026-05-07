@@ -234,6 +234,21 @@ export function createRoutesApi(client: ApiClient) {
       });
     },
 
+    addDicts(data?: { k: string; v: string; realm: string }) {
+      return client.request({
+        method: "POST",
+        path: "/api/dicts",
+        body: data,
+      });
+    },
+
+    delDicts(id: number) {
+      return client.request({
+        method: "DELETE",
+        path: `/api/dicts/${encodeURIComponent(id)}`,
+      });
+    },
+
     getDicts(realm?: string) {
       return client.request<DictItem[]>({
         method: "GET",

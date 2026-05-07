@@ -35,6 +35,7 @@ import {
   createNumberTransformApi,
   createTimeRulesApi,
   createLogsApi,
+  createDiagnosticsApi,
   type Hotline,
   type DOD,
   type ListHotlinesResponse,
@@ -78,6 +79,7 @@ import {
   type ListIvrsQuery,
   type ListIvrsResponse,
   type IvrsApi,
+  type DiagnosticsApi,
 } from "@repo/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 
@@ -135,6 +137,7 @@ export const ivrsApi = createIvrsApi(apiClient);
 export const numberTransformApi = createNumberTransformApi(apiClient);
 export const timeRulesApi = createTimeRulesApi(apiClient);
 export const logsApi = createLogsApi(apiClient);
+export const diagnosticsApi = createDiagnosticsApi(apiClient);
 
 export type {
   ApiClient,
@@ -196,4 +199,5 @@ export type {
   ListIvrsQuery,
   ListIvrsResponse,
   IvrsApi,
+  DiagnosticsApi,
 };

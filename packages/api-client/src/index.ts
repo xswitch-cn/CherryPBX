@@ -106,6 +106,15 @@ export { createLogsApi } from "./apis/logs.api";
 export type { LogConfig, LogSetting, LogsApi } from "./apis/logs.api";
 export type { LogParam, LogMap } from "./apis/logs.api";
 
+export { createDiagnosticsApi } from "./apis/diagnostics.api";
+export type {
+  DiagnosticsApi,
+  PingRequest,
+  PingResponse,
+  CaptureRequest,
+  CaptureResponse,
+} from "./apis/diagnostics.api";
+
 export type {
   Gateway,
   ListGatewaysQuery,

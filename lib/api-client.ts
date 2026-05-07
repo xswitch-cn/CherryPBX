@@ -12,6 +12,7 @@ import {
   createBlacklistsApi,
   createConferencesApi,
   createSipApi,
+  createIvrsApi,
   type Route,
   type ListRoutesQuery,
   type ListRoutesResponse,
@@ -73,6 +74,10 @@ import {
   type LogParam,
   type LogMap,
   type LogsApi,
+  type IVR,
+  type ListIvrsQuery,
+  type ListIvrsResponse,
+  type IvrsApi,
 } from "@repo/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 
@@ -126,6 +131,7 @@ export const contextsApi = createContextsApi(apiClient);
 export const blacklistsApi = createBlacklistsApi(apiClient);
 export const conferencesApi = createConferencesApi(apiClient);
 export const sipApi = createSipApi(apiClient);
+export const ivrsApi = createIvrsApi(apiClient);
 export const numberTransformApi = createNumberTransformApi(apiClient);
 export const timeRulesApi = createTimeRulesApi(apiClient);
 export const logsApi = createLogsApi(apiClient);
@@ -186,4 +192,8 @@ export type {
   LogParam,
   LogMap,
   LogsApi,
+  IVR,
+  ListIvrsQuery,
+  ListIvrsResponse,
+  IvrsApi,
 };

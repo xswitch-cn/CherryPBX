@@ -37,8 +37,10 @@ export { createContextsApi } from "./apis/contexts.api";
 export { createBlacklistsApi } from "./apis/blacklists.api";
 export { createConferencesApi } from "./apis/conferences.api";
 export { createSipApi } from "./apis/sip.api";
+export { createIvrsApi } from "./apis/ivrs.api";
 
 export type { ListUsersQuery, ListUsersResponse, UsersApi } from "./apis/users.api";
+export type { ListIvrsQuery, ListIvrsResponse, IVR, IvrsApi } from "./apis/ivrs.api";
 export type {
   ListConferencesQuery,
   ListConferencesResponse,

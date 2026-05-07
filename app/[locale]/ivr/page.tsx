@@ -1,123 +1,167 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/navigation";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
 import { SiteHeader } from "@/app/[locale]/dashboard/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { IvrTable } from "./components/ivr-table";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "lucide-react";
+import { ListTable, ListPagination } from "@/components/ui/list-components";
+import { toast } from "sonner";
+import { type IVR, createIvrColumns } from "./ivr-columns";
+import { CreateIvrDialog, DeleteIvrDialog, CreateIvrFormData } from "./components/ivr-table";
+import { ivrsApi, type ListIvrsQuery, type ListIvrsResponse } from "@/lib/api-client";
 
-// Mock data for IVR
-const mockIvrData = [
-  {
-    id: 1,
-    name: "主菜单IVR",
-    description: "公司主欢迎菜单，工作时间接待",
-    status: "Active",
-    timeout: 10,
-    timeoutDestination: "分机 1001",
-    invalidRetry: 3,
-    invalidDestination: "挂断",
-    totalCalls: 1256,
-    lastCall: "2024-03-15 14:30:22",
-  },
-  {
-    id: 2,
-    name: "售后支持IVR",
-    description: "售后服务支持语音导航",
-    status: "Active",
-    timeout: 15,
-    timeoutDestination: "队列 support",
-    invalidRetry: 2,
-    invalidDestination: "重复播放",
-    totalCalls: 892,
-    lastCall: "2024-03-15 13:45:10",
-  },
-  {
-    id: 3,
-    name: "销售咨询IVR",
-    description: "销售部门咨询语音导航",
-    status: "Active",
-    timeout: 12,
-    timeoutDestination: "分机 2001",
-    invalidRetry: 3,
-    invalidDestination: "分机 2000",
-    totalCalls: 567,
-    lastCall: "2024-03-15 12:20:45",
-  },
-  {
-    id: 4,
-    name: "夜间服务IVR",
-    description: "非工作时间自动语音服务",
-    status: "Inactive",
-    timeout: 8,
-    timeoutDestination: "语音信箱",
-    invalidRetry: 2,
-    invalidDestination: "挂断",
-    totalCalls: 234,
-    lastCall: "2024-03-14 22:15:30",
-  },
-  {
-    id: 5,
-    name: "技术支持IVR",
-    description: "技术部门支持热线导航",
-    status: "Active",
-    timeout: 20,
-    timeoutDestination: "队列 tech",
-    invalidRetry: 4,
-    invalidDestination: "分机 3001",
-    totalCalls: 445,
-    lastCall: "2024-03-15 11:55:00",
-  },
-  {
-    id: 6,
-    name: "财务部门IVR",
-    description: "财务相关事务语音导航",
-    status: "Active",
-    timeout: 10,
-    timeoutDestination: "分机 4001",
-    invalidRetry: 3,
-    invalidDestination: "重复播放",
-    totalCalls: 178,
-    lastCall: "2024-03-15 10:30:15",
-  },
-  {
-    id: 7,
-    name: "VIP客户IVR",
-    description: "VIP客户专属服务通道",
-    status: "Active",
-    timeout: 15,
-    timeoutDestination: "分机 5001",
-    invalidRetry: 5,
-    invalidDestination: "分机 5000",
-    totalCalls: 89,
-    lastCall: "2024-03-15 09:45:33",
-  },
-  {
-    id: 8,
-    name: "招聘热线IVR",
-    description: "人力资源招聘咨询导航",
-    status: "Inactive",
-    timeout: 12,
-    timeoutDestination: "语音信箱",
-    invalidRetry: 2,
-    invalidDestination: "挂断",
-    totalCalls: 56,
-    lastCall: "2024-03-10 16:20:00",
-  },
-];
+// 每页显示数量
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const DEFAULT_PAGE_SIZE = 10;
 
 export default function IvrPage() {
   const router = useRouter();
   const t = useTranslations("pages");
+  const tt = useTranslations("ivr");
+  const ttt = useTranslations("table");
 
+  const [ivrs, setIvrs] = useState<IVR[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedIvr, setSelectedIvr] = useState<IVR | null>(null);
+
+  // 加载IVR列表
+  const loadIvrs = useCallback(
+    async (page: number = currentPage, size: number = pageSize) => {
+      setIsLoading(true);
+      try {
+        const queryParams: ListIvrsQuery = {
+          page,
+          perPage: size,
+        };
+
+        const response = await ivrsApi.list(queryParams);
+        const responseData = response.data as ListIvrsResponse;
+
+        const formattedIvrs = (responseData.data || []).map(
+          (item: {
+            id: number;
+            name: string;
+            description: string;
+            identifier: string;
+            greet_long?: string;
+            greet_short?: string;
+            count_actions?: number;
+          }) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            identifier: item.identifier,
+            welcomeAudio: item.greet_long || "",
+            shortWelcomeAudio: item.greet_short || "",
+            actionCount: item.count_actions || 0,
+          }),
+        );
+
+        setIvrs(formattedIvrs);
+        setTotalCount(responseData.rowCount || 0);
+        setPageCount(Math.ceil((responseData.rowCount || 0) / size) || 0);
+        setCurrentPage(page);
+        setPageSize(size);
+      } catch (error) {
+        console.error("Failed to load ivrs:", error);
+        toast.error(tt("loadFailed"));
+        setIvrs([]);
+        setTotalCount(0);
+        setPageCount(0);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [currentPage, pageSize, tt],
+  );
+
+  // 处理删除IVR
+  const handleDeleteIvr = useCallback((ivr: IVR) => {
+    setSelectedIvr(ivr);
+    setIsDeleteOpen(true);
+  }, []);
+
+  // 创建IVR
+  const handleCreate = useCallback(
+    async (data: CreateIvrFormData) => {
+      try {
+        await ivrsApi.create(data);
+        toast.success(tt("addSuccess"));
+        await loadIvrs(1, pageSize);
+        setIsCreateOpen(false);
+      } catch (error) {
+        console.error("Failed to create ivr:", error);
+        toast.error(tt("addFailed"));
+        throw new Error("create failed");
+      }
+    },
+    [loadIvrs, pageSize, tt],
+  );
+
+  // 删除IVR
+  const handleDelete = useCallback(
+    async (id: number) => {
+      try {
+        await ivrsApi.delete(id);
+        toast.success(tt("deleteSuccess"));
+        await loadIvrs(currentPage, pageSize);
+        setIsDeleteOpen(false);
+        setSelectedIvr(null);
+      } catch (error) {
+        console.error("Failed to delete ivr:", error);
+        toast.error(tt("deleteFailed"));
+      }
+    },
+    [loadIvrs, currentPage, pageSize, tt],
+  );
+
+  // 处理翻页
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      void loadIvrs(newPage, pageSize);
+    },
+    [loadIvrs, pageSize],
+  );
+
+  // 处理每页数量变化
+  const handlePageSizeChange = useCallback(
+    (newSize: number) => {
+      void loadIvrs(1, newSize);
+    },
+    [loadIvrs],
+  );
+
+  // 列配置
+  const ivrColumns = useMemo(
+    () =>
+      createIvrColumns({
+        t: tt,
+        tt: ttt,
+        onDelete: handleDeleteIvr,
+      }),
+    [tt, ttt, handleDeleteIvr],
+  );
+
+  // 初始化
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
       router.push("/login");
+      return;
     }
-  }, [router]);
+
+    void loadIvrs();
+  }, [router, loadIvrs]);
 
   return (
     <SidebarProvider>
@@ -128,12 +172,51 @@ export default function IvrPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <IvrTable data={mockIvrData} />
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-end">
+                    <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+                      <PlusIcon className="mr-2 h-4 w-4" />
+                      {tt("addIvr")}
+                    </Button>
+                  </div>
+
+                  {/* 表格 */}
+                  <ListTable<IVR>
+                    columns={ivrColumns}
+                    data={ivrs}
+                    isLoading={isLoading}
+                    emptyText={tt("noIvr")}
+                    translationPrefix="table"
+                  />
+
+                  {/* 分页 */}
+                  <ListPagination
+                    currentPage={currentPage}
+                    pageCount={pageCount}
+                    pageSize={pageSize}
+                    totalCount={totalCount}
+                    onPageChange={handlePageChange}
+                    onPageSizeChange={handlePageSizeChange}
+                    pageSizeOptions={PAGE_SIZE_OPTIONS}
+                    translationPrefix="table"
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </SidebarInset>
+
+      {/* 新增弹窗 */}
+      <CreateIvrDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} onSubmit={handleCreate} />
+
+      {/* 删除弹窗 */}
+      <DeleteIvrDialog
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        ivr={selectedIvr}
+        onSubmit={handleDelete}
+      />
     </SidebarProvider>
   );
 }

@@ -235,7 +235,7 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
             </div>
           </div>
           <EditableSection
-            title="基本信息"
+            title={tc("basicInfo")}
             defaultValues={{
               ...license,
             }}
@@ -296,8 +296,8 @@ export default function LicenseDetailsPage({ params }: LicenseDetailsPageProps) 
             renderContent={(item) => (
               <EditableTable
                 columns={[
-                  { key: "k", header: "名称" },
-                  { key: "v", header: "值", type: "text" },
+                  { key: "k", header: tc("name") },
+                  { key: "v", header: tc("value"), type: "text" },
                 ]}
                 data={item?.params || []}
                 switchCheckedValue={0}

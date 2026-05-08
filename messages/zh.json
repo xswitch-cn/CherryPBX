@@ -1624,6 +1624,7 @@
     "Confirm to Delete ?": "确认删除？",
     "value": "值",
     "key": "键",
+    "basicInfo": "基本信息",
     "direction": "方向",
     "createSuccess": "添加成功",
     "createFailed": "添加失败",

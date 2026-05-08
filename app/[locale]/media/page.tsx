@@ -168,7 +168,7 @@ export default function MediasPage() {
     void loadMedias();
     void loadCustomTypes();
     void checkLiveStatus();
-  }, [router, loadMedias]);
+  }, [router]);
 
   // 处理导入
   const handleImport = async (files: File[]) => {
@@ -300,12 +300,17 @@ export default function MediasPage() {
                         placeholder: tm("name"),
                         width: "200px",
                       },
+                      {
+                        name: "type",
+                        label: tm("type"),
+                        type: "select",
+                        options: customTypes,
+                        optionLabelKey: "k",
+                        optionValueKey: "v",
+                        width: "200px",
+                      },
                     ]}
                     onFilterChange={handleFilterChange}
-                    defaultValues={{
-                      name: filters.name || "",
-                      destType: filters.destType || "",
-                    }}
                   />
 
                   <div className="flex items-center justify-between">

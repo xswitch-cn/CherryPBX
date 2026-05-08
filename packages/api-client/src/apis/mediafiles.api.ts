@@ -91,6 +91,30 @@ export function createMediaFilesApi(client: ApiClient) {
       });
     },
 
+    // 检测定期删除状态
+    checkLiveStatus() {
+      return client.request<{ msg: string }>({
+        method: "GET",
+        path: "/api/check/clean-file",
+      });
+    },
+
+    // 定期删除
+    regularDelete(data: { threshold: string; regular: string }) {
+      return client.request({
+        method: "DELETE",
+        path: `api/media_files/regular/${data.threshold}/${data.regular}`,
+      });
+    },
+
+    // 取消定期删除
+    cancelRegularDelete() {
+      return client.request({
+        method: "DELETE",
+        path: `/api/media_files/cancel/regular`,
+      });
+    },
+
     /**
      * 上传媒体文件
      */

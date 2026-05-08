@@ -1348,7 +1348,12 @@
 	  "TTS Text": "TTS文本",
     "customType": "自定义类型",
     "typeName": "类型名称",
-    "deletedMedia": "已删除媒体：{name}"
+    "Regular Delete": "定期删除",
+    "Reguar Delete Successfully": "成功设置定期删除",
+    "Cancel Regular Delete": "取消定期删除",
+    "Cancel Regular Delete Successfully": "成功取消定期删除",
+    "Delete Threshold": "删除阈值",
+    "Effective Immediately": "立即生效"
   },
   "ipBlacklist": {
     "addIp": "添加IP",
@@ -1648,6 +1653,8 @@
     "control": "控制",
     "createParam": "创建参数",
     "description": "描述",
-    "Add Param": "添加参数"
+    "Add Param": "添加参数",
+    "year": "年",
+    "month": "月"
     }
 }

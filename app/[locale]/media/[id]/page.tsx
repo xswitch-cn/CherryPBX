@@ -91,7 +91,7 @@ export default function MediaDetailsPage({ params }: MediaDetailsPageProps) {
             ]}
           />
           <EditableSection
-            title="基本信息"
+            title={tc("basicInfo")}
             defaultValues={{
               ...media,
             }}

@@ -185,7 +185,7 @@ export default function RouteDetailsPage({ params }: RouteDetailsPageProps) {
                 />
 
                 <EditableSection
-                  title="基本信息"
+                  title={tc("basicInfo")}
                   defaultValues={route || {}}
                   onSave={handleSave}
                   onCancel={handleCancel}

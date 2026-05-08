@@ -31,13 +31,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { RingtoneField } from "@/components/ui/ringtone-field";
-import React from "react";
 
 export default function ExtensionDetailsPage() {
   const params = useParams<{ id: string; locale: string }>();
   const router = useRouter();
   const t = useTranslations("pages");
   const tt = useTranslations("extensions");
+  const tc = useTranslations("common");
 
   const extensionId = params.id;
   const [extension, setExtension] = useState<Extension | null>(null);
@@ -565,7 +565,7 @@ export default function ExtensionDetailsPage() {
                 />
 
                 <EditableSection
-                  title="基本信息"
+                  title={tc("basicInfo")}
                   defaultValues={{
                     ...extension,
                     login: (extension as any)?.login || "",

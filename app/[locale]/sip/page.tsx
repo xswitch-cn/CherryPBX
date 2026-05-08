@@ -173,9 +173,9 @@ export default function SipPage() {
                 <EditableTable
                   columns={[
                     { key: "id", header: "ID" },
-                    { key: "k", header: "名称", type: "text" },
-                    { key: "v", header: "值", type: "text" },
-                    { key: "disabled", header: "启用", type: "switch" },
+                    { key: "k", header: tc("name"), type: "text" },
+                    { key: "v", header: tc("value"), type: "text" },
+                    { key: "disabled", header: tc("enabled"), type: "switch" },
                     {
                       key: "action",
                       header: tc("actions"),

@@ -398,10 +398,10 @@ function EditableTableCell<TData extends Record<string, unknown>>({
  * ```tsx
  * <EditableTable
  *   columns={[
- *     { key: "name", header: "名称" },
- *     { key: "value", header: "值", type: "text" },
+ *     { key: "name", header: tc('name') },
+ *     { key: "value", header: tc('value'), type: "text" },
  *     { key: "direction", header: "方向", type: "select", options: directionOptions },
- *     { key: "enabled", header: "启用", type: "switch" },
+ *     { key: "enabled", header: tc('enabled'), type: "switch" },
  *   ]}
  *   data={rows}
  *   onChange={({ rowId, key, value, rowData }) => {

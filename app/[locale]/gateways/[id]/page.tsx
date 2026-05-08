@@ -447,7 +447,7 @@ export default function GatewayDetailsPage({ params }: GatewayDetailsPageProps) 
                 />
 
                 <EditableSection
-                  title="基本信息"
+                  title={tc("basicInfo")}
                   defaultValues={{
                     ...gateway,
                     profile_id: gateway?.profile_id ? gateway?.profile_id.toString() : "",
@@ -542,9 +542,9 @@ export default function GatewayDetailsPage({ params }: GatewayDetailsPageProps) 
 
                 <EditableTable
                   columns={[
-                    { key: "k", header: "名称" },
-                    { key: "v", header: "值", type: "text" },
-                    { key: "disabled", header: "启用", type: "switch" },
+                    { key: "k", header: tc("name") },
+                    { key: "v", header: tc("value"), type: "text" },
+                    { key: "disabled", header: tc("enabled"), type: "switch" },
                     ...(tabType === "1" || tabType === "2"
                       ? [
                           {
@@ -617,8 +617,8 @@ export default function GatewayDetailsPage({ params }: GatewayDetailsPageProps) 
 
                 <EditableTable
                   columns={[
-                    { key: "k", header: "名称" },
-                    { key: "v", header: "值", type: "text" },
+                    { key: "k", header: tc("name") },
+                    { key: "v", header: tc("value"), type: "text" },
                     {
                       key: "direction",
                       header: "方向",
@@ -629,7 +629,7 @@ export default function GatewayDetailsPage({ params }: GatewayDetailsPageProps) 
                         { value: "2", label: "呼出" },
                       ],
                     },
-                    { key: "disabled", header: "启用", type: "switch" },
+                    { key: "disabled", header: tc("enabled"), type: "switch" },
                     ...(variateTabType === "1"
                       ? [
                           {

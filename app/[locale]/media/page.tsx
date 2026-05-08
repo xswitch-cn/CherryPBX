@@ -16,7 +16,7 @@ import { createMediaColumns } from "./media-columns";
 import { toast } from "sonner";
 import { UploadIcon, PlusIcon, DownloadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AddTtsDialog } from "./components/add-tts-dialog";
+import { AddActionDialog } from "./components/add-action-dialog";
 
 // 每页显示数量
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -49,6 +49,9 @@ export default function MediasPage() {
   const [selectedMedias, setSelectedMedias] = useState<MediaFile[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const [customTypes, setCustomTypes] = useState<DictItem[]>([]);
+  const [type, setType] = useState<string>("");
+  const [liveCheck, setLiveCheck] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
 
   const mediaColumns = createMediaColumns({
     t: tm,
@@ -148,6 +151,12 @@ export default function MediasPage() {
     setCustomTypes(response.data || []);
   };
 
+  // 检查定期删除状态
+  const checkLiveStatus = async () => {
+    const response = await mediaFilesApi.checkLiveStatus();
+    setLiveCheck(response.data.msg === "Already Running");
+  };
+
   // 初始化加载
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -158,6 +167,7 @@ export default function MediasPage() {
 
     void loadMedias();
     void loadCustomTypes();
+    void checkLiveStatus();
   }, [router, loadMedias]);
 
   // 处理导入
@@ -193,12 +203,31 @@ export default function MediasPage() {
 
   const handleCreate = async (data: any) => {
     try {
-      await mediaFilesApi.addTts(data);
+      if (type === "tts") {
+        await mediaFilesApi.addTts(data);
+      } else {
+        await mediaFilesApi.regularDelete(data);
+        void checkLiveStatus();
+      }
       toast.success(tc("createSuccess"));
-      await loadMedias(1, pageSize, filters);
+      // await loadMedias(1, pageSize, filters);
     } catch (error) {
       console.error("Failed to create media:", error);
       toast.error(tc("createFailed"));
+    }
+  };
+
+  // 取消定期删除
+  const handleCancelRegularDelete = async () => {
+    setIsCanceling(true);
+    try {
+      await mediaFilesApi.cancelRegularDelete();
+      toast.success(tm("Cancel Regular Delete Successfully"));
+      setLiveCheck(false);
+    } catch (error) {
+      console.error("Failed to cancel regular delete:", error);
+    } finally {
+      setIsCanceling(false);
     }
   };
 
@@ -296,10 +325,36 @@ export default function MediasPage() {
                       >
                         {tm("customType")}
                       </Button>
-                      <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setType("tts");
+                          setIsCreateDialogOpen(true);
+                        }}
+                      >
                         <PlusIcon className="mr-2 h-4 w-4" />
                         TTS
                       </Button>
+                      {!liveCheck ? (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setType("delete");
+                            setIsCreateDialogOpen(true);
+                          }}
+                        >
+                          {tm("Regular Delete")}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => void handleCancelRegularDelete()}
+                          disabled={isCanceling}
+                        >
+                          {tm("Cancel Regular Delete")}
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -364,11 +419,12 @@ export default function MediasPage() {
         isLoading={isImporting}
       />
 
-      {/* 新增TTS */}
-      <AddTtsDialog
+      {/* 新增T */}
+      <AddActionDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
         onSubmit={handleCreate}
+        type={type}
       />
 
       {/* 自定义类型管理 */}

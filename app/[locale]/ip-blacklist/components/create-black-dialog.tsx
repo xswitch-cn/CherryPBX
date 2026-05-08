@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { DynamicFormDialog, FormConfig } from "@/components/dynamic-form-dialog";
+import { DynamicFormDialog, FormConfig, FieldConfig } from "@/components/dynamic-form-dialog";
 
 interface CreateIpBlackDialogProps {
   open: boolean;
@@ -12,44 +13,57 @@ interface CreateIpBlackDialogProps {
 export function CreateIpBlackDialog({ open, onOpenChange, onSubmit }: CreateIpBlackDialogProps) {
   const ti = useTranslations("ipBlacklist");
   const tc = useTranslations("common");
+  const [selectedModule, setSelectedAgreement] = useState<string>("");
+
+  useEffect(() => {
+    if (!open) {
+      setSelectedAgreement("");
+    }
+  }, [open]);
 
   // 定义表单配置
   const formConfig: FormConfig = {
     fields: [
       {
-        name: "name",
+        name: "target_name",
         label: ti("name"),
         type: "text",
         placeholder: ti("namePlaceholder"),
         required: true,
       },
       {
-        name: "source_ip",
+        name: "target_ip",
         label: ti("sourceIp"),
         type: "text",
         placeholder: ti("sourceIpPlaceholder"),
         required: true,
       },
       {
-        name: "protocol",
+        name: "target_protocol",
         label: ti("protocol"),
         type: "select",
         placeholder: ti("protocolPlaceholder"),
         required: true,
+        onChange: (value: string) => {
+          setSelectedAgreement(value);
+        },
         options: [
           { label: "TCP", value: "tcp" },
           { label: "UDP", value: "udp" },
-          { label: "TLS", value: "tls" },
           { label: ti("all"), value: "all" },
         ],
       },
-      {
-        name: "port",
-        label: ti("port"),
-        type: "number",
-        placeholder: ti("portPlaceholder"),
-        required: true,
-      },
+      ...(selectedModule !== "all"
+        ? [
+            {
+              name: "target_port",
+              label: ti("port"),
+              type: "number",
+              placeholder: ti("portPlaceholder"),
+              required: true,
+            } satisfies FieldConfig,
+          ]
+        : []),
     ],
   };
 

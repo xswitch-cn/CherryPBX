@@ -42,33 +42,19 @@ export function createIpBlacklistsApi(client: ApiClient) {
       });
     },
 
-    get(id: number | string) {
-      return client.request<IpBlacklist>({
-        method: "GET",
-        path: `/api/ip-blacklists/${id}`,
-      });
-    },
-
     create(data: CreateIpBlacklistRequest) {
       return client.request({
         method: "POST",
-        path: "/api/ip-blacklists",
+        path: "/api/iptables/add_rule",
         body: data,
       });
     },
 
-    update(id: number | string, data: Partial<CreateIpBlacklistRequest>) {
+    delete(data: any) {
       return client.request({
-        method: "PUT",
-        path: `/api/ip-blacklists/${id}`,
+        method: "POST",
+        path: `/api/iptables/clean_drop_rule`,
         body: data,
-      });
-    },
-
-    delete(id: number | string) {
-      return client.request({
-        method: "DELETE",
-        path: `/api/ip-blacklists/${id}`,
       });
     },
 

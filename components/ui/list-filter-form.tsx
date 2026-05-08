@@ -33,7 +33,11 @@ export interface FilterField {
   /** 搜索框占位符 */
   placeholder?: string;
   /** Select 选项（仅 type="select" 时使用） */
-  options?: Array<{ value: string; label: string }>;
+  options?: Array<{ value: string; label: string }> | any[];
+  /** 选项的 label 字段名（用于自定义数据格式，默认 'label'） */
+  optionLabelKey?: string;
+  /** 选项的 value 字段名（用于自定义数据格式，默认 'value'） */
+  optionValueKey?: string;
   /** 自定义渲染函数（仅 type="custom" 时使用） */
   render?: (form: UseFormReturn<Record<string, any>>) => React.ReactNode;
   /** 字段宽度 */
@@ -220,6 +224,10 @@ export function ListFilterForm({
       }
 
       case "select": {
+        // 获取 label 和 value 的字段名，默认为 'label' 和 'value'
+        const labelKey = field.optionLabelKey || "label";
+        const valueKey = field.optionValueKey || "value";
+
         return (
           <Select
             value={formValues[field.name] || ""}
@@ -234,11 +242,23 @@ export function ListFilterForm({
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {field.options?.map((option) => (
-                  <SelectItem key={option.value || "__empty__"} value={option.value || "__empty__"}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                {field.options?.map((option, index) => {
+                  // 支持两种格式：{ value, label } 或自定义字段名
+                  const label =
+                    typeof option === "object" && option !== null
+                      ? option[labelKey] || option.label
+                      : String(option);
+                  const value =
+                    typeof option === "object" && option !== null
+                      ? option[valueKey] || option.value
+                      : String(option);
+
+                  return (
+                    <SelectItem key={value || `__empty__-${index}`} value={value || "__empty__"}>
+                      {label}
+                    </SelectItem>
+                  );
+                })}
               </SelectGroup>
             </SelectContent>
           </Select>

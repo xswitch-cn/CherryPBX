@@ -13,6 +13,7 @@ import {
   createConferencesApi,
   createSipApi,
   createIvrsApi,
+  createIpBlacklistsApi,
   type Route,
   type ListRoutesQuery,
   type ListRoutesResponse,
@@ -138,6 +139,7 @@ export const numberTransformApi = createNumberTransformApi(apiClient);
 export const timeRulesApi = createTimeRulesApi(apiClient);
 export const logsApi = createLogsApi(apiClient);
 export const diagnosticsApi = createDiagnosticsApi(apiClient);
+export const ipBlacklistsApi = createIpBlacklistsApi(apiClient);
 
 export type {
   ApiClient,

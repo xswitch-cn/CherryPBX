@@ -152,6 +152,14 @@ export type {
   BlacklistsApi,
 } from "./apis/blacklists.api";
 
+export { createIpBlacklistsApi } from "./apis/ip-blacklists.api";
+export type {
+  IpBlacklist,
+  ListIpBlacklistsQuery,
+  ListIpBlacklistsResponse,
+  CreateIpBlacklistRequest,
+} from "./apis/ip-blacklists.api";
+
 export { toQueryString } from "./utils/query";
 export { isBrowser, isNode, isWebWorker } from "./utils/env";
 export { DEFAULT_TIMEOUT_MS, DEFAULT_HEADERS } from "./constants";

@@ -1,76 +1,308 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/navigation";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
 import { SiteHeader } from "@/app/[locale]/dashboard/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { IpBlacklistTable } from "./components/ip-blacklist-table";
+import { ListTable } from "@/components/ui/list-components";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ipBlacklistsApi } from "@/lib/api-client";
+import { type IpBlacklist, type ListIpBlacklistsQuery } from "@repo/api-client";
+import { toast } from "sonner";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { CreateIpBlackDialog } from "./components/create-black-dialog";
+import { createIpBlackColumns } from "./black-columns";
+import { PlusIcon, XIcon, RefreshCwIcon, ShieldAlertIcon } from "lucide-react";
 
-const mockIpBlacklistData = [
-  {
-    id: 1,
-    ipAddress: "192.168.1.100",
-    reason: "暴力破解尝试",
-    addedDate: "2024-03-15 10:30:00",
-    expiryDate: "永久",
-    status: "Active",
-  },
-  {
-    id: 2,
-    ipAddress: "10.0.0.50",
-    reason: "扫描攻击",
-    addedDate: "2024-03-14 15:20:00",
-    expiryDate: "2024-04-14",
-    status: "Active",
-  },
-  {
-    id: 3,
-    ipAddress: "172.16.0.25",
-    reason: "异常呼叫频率",
-    addedDate: "2024-03-13 09:00:00",
-    expiryDate: "永久",
-    status: "Active",
-  },
-  {
-    id: 4,
-    ipAddress: "203.0.113.45",
-    reason: "SIP泛洪攻击",
-    addedDate: "2024-03-12 18:45:00",
-    expiryDate: "2024-03-19",
-    status: "Inactive",
-  },
-  {
-    id: 5,
-    ipAddress: "198.51.100.10",
-    reason: "注册攻击",
-    addedDate: "2024-03-10 08:30:00",
-    expiryDate: "永久",
-    status: "Active",
-  },
-];
+// 扩展 IpBlacklist 类型，添加解析后的字段
+type ParsedIpBlacklist = IpBlacklist & {
+  target_name?: string;
+  ip_address?: string;
+  target_protocol?: string;
+  target_port?: string;
+  rule_spec?: string;
+};
 
 export default function IpBlacklistPage() {
   const router = useRouter();
   const t = useTranslations("pages");
+  const ti = useTranslations("ipBlacklist");
+  const tc = useTranslations("common");
+
+  const [ipBlacklists, setIpBlacklists] = useState<ParsedIpBlacklist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ParsedIpBlacklist | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<string>("");
+  const [verifyIp, setVerifyIp] = useState("");
+
+  // 查询黑名单最后更新时间
+  const queryBlackListLastUpdateTime = useCallback(async () => {
+    try {
+      const response = await ipBlacklistsApi.UpdateTime();
+      const result = response.data?.data || [];
+      const lastTime = result.pop()?.v;
+      if (lastTime) {
+        setLastUpdateTime(lastTime);
+      }
+    } catch (error) {
+      console.error("Failed to query update time:", error);
+    }
+  }, []);
+
+  // 加载数据列表
+  const loadIpBlacklists = useCallback(
+    async (ip?: string) => {
+      setIsLoading(true);
+      try {
+        const queryParams: ListIpBlacklistsQuery = {};
+        if (ip) {
+          queryParams.ip = ip;
+        }
+
+        const response = await ipBlacklistsApi.list(queryParams);
+        const responseData = response.data as any;
+        const rawData = responseData?.data || [];
+
+        // 解析 iptables 规则数据
+        const parsedData = rawData.map((item: any) => {
+          let target_name = "";
+          let ip_address = "";
+          let target_protocol = "all";
+          let target_port = "all";
+
+          const singleRuleArr = item.rule_spec?.split(" ") || [];
+          for (let index = 0; index < singleRuleArr.length; index++) {
+            ip_address = singleRuleArr[2];
+
+            if (singleRuleArr[index] === "--comment") {
+              target_name = singleRuleArr[index + 1];
+            }
+
+            if (singleRuleArr[index] === "-p") {
+              target_protocol = singleRuleArr[index + 1];
+            }
+
+            if (singleRuleArr[index] === "--dport") {
+              target_port = singleRuleArr[index + 1];
+            }
+          }
+
+          return {
+            ...item,
+            target_name,
+            ip_address,
+            target_protocol,
+            target_port,
+          };
+        });
+        setIpBlacklists(parsedData);
+      } catch (error) {
+        console.error("Failed to load ip blacklists:", error);
+        toast.error(tc("loadFailed"));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [tc],
+  );
+
+  // 刷新数据（从自动防御系统获取最新数据）
+  const handleRefresh = useCallback(async () => {
+    try {
+      // 调用更新黑名单 API
+      await ipBlacklistsApi.refresh();
+      toast.success(ti("refreshSuccess"));
+      // 重新查询更新时间
+      await queryBlackListLastUpdateTime();
+    } catch (error) {
+      console.error("Failed to refresh ip blacklists:", error);
+      toast.error(ti("refreshFailed"));
+    }
+  }, [queryBlackListLastUpdateTime, ti]);
+
+  // 验证IP是否在黑名单中
+  const handleVerify = async () => {
+    if (!verifyIp.trim()) {
+      toast.error(ti("pleaseEnterIp"));
+      return;
+    }
+    try {
+      const response = await ipBlacklistsApi.verify({ query_ip: verifyIp.trim() });
+      const ipsetResult = response.data?.data?.[0]?.ipset_result;
+      if (ipsetResult) {
+        toast.success(ti("ipInBlacklist", { ip: verifyIp }));
+      } else {
+        toast.info(ti("ipNotInBlacklist", { ip: verifyIp }));
+      }
+    } catch (error) {
+      console.error("Failed to verify ip:", error);
+      toast.error(ti("verifyFailed"));
+    }
+  };
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) router.push("/login");
-  }, [router]);
+
+    // 查询最后更新时间
+    void queryBlackListLastUpdateTime();
+    // 加载数据
+    void loadIpBlacklists();
+  }, [router, loadIpBlacklists, queryBlackListLastUpdateTime]);
+
+  // 删除数据
+  const handleDelete = (item: ParsedIpBlacklist) => {
+    setDeleteTarget(item);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const executeDelete = useCallback(
+    async (item: ParsedIpBlacklist) => {
+      setIsDeleting(true);
+      try {
+        await ipBlacklistsApi.delete(item.id);
+        toast.success(tc("deleteSuccess") || "删除成功");
+        await loadIpBlacklists();
+      } catch (error) {
+        console.error("Failed to delete ip blacklist:", error);
+        toast.error(tc("deleteFailed") || "删除失败");
+      } finally {
+        setIsDeleting(false);
+        setDeleteTarget(null);
+      }
+    },
+    [loadIpBlacklists, tc],
+  );
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    await executeDelete(deleteTarget);
+    setIsDeleteDialogOpen(false);
+  }, [deleteTarget, executeDelete]);
+
+  // 创建数据
+  const handleCreate = useCallback(
+    async (data: any) => {
+      try {
+        await ipBlacklistsApi.create(data);
+        toast.success(tc("createSuccess"));
+        await loadIpBlacklists();
+        setIsCreateDialogOpen(false);
+      } catch (error) {
+        console.error("Failed to create ip blacklist:", error);
+        toast.error(tc("createFailed"));
+        throw new Error("create failed");
+      }
+    },
+    [loadIpBlacklists, tc],
+  );
+
+  // 列配置
+  const columns = createIpBlackColumns<ParsedIpBlacklist>({
+    ti,
+    tc,
+    onDelete: handleDelete,
+  });
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader title={t("ipBlacklist")} />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="px-4 lg:px-6">
-                <IpBlacklistTable data={mockIpBlacklistData} />
+        <div className="px-4 lg:px-6 py-4 md:py-6 flex flex-col gap-4">
+          {/* 标题区域 - 自动防御黑名单数据 */}
+          <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <ShieldAlertIcon className="h-12 w-12 text-primary" />
+                <div className="absolute -top-1 -right-1 h-4 w-4 bg-destructive rounded-full flex items-center justify-center">
+                  <span className="text-[10px] text-white font-bold">!</span>
+                </div>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">{ti("title")}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {ti("description")} <span className="text-primary">{lastUpdateTime}</span>
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => void handleRefresh()}>
+              <RefreshCwIcon className="mr-2 h-4 w-4" />
+              {ti("refreshData")}
+            </Button>
+          </div>
+
+          {/* 操作栏 */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div />
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                {ti("addIp")}
+              </Button>
+              <div className="flex items-center gap-1">
+                <Input
+                  placeholder={ti("pleaseEnterIp")}
+                  value={verifyIp}
+                  onChange={(e) => setVerifyIp(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      void handleVerify();
+                    }
+                  }}
+                  className="w-48 h-8"
+                />
+                {verifyIp && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setVerifyIp("")}
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button variant="default" size="sm" onClick={() => void handleVerify()}>
+                  {ti("verifyBlacklist")}
+                </Button>
               </div>
             </div>
           </div>
+
+          {/* 表格 */}
+          <ListTable<IpBlacklist>
+            columns={columns}
+            data={ipBlacklists}
+            isLoading={isLoading}
+            emptyText={tc("noData") || "暂无数据"}
+            loadingText={tc("loading") || "加载中..."}
+            translationPrefix="table"
+          />
+          <DeleteConfirmDialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            title={ti("deleteIpBlacklist")}
+            description={tc("DeleteItem", {
+              item: deleteTarget?.target_name || deleteTarget?.ip_address || "",
+            })}
+            onSubmit={handleConfirmDelete}
+            deleteText={tc("confirm") || "确定"}
+            cancelText={tc("cancel") || "取消"}
+            isLoading={isDeleting}
+          />
+
+          {/* 新增对话框 */}
+          <CreateIpBlackDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            onSubmit={handleCreate}
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>

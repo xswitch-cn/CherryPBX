@@ -15,7 +15,22 @@ import { toast } from "sonner";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { CreateIpBlackDialog } from "./components/create-black-dialog";
 import { createIpBlackColumns } from "./black-columns";
-import { PlusIcon, XIcon, RefreshCwIcon, ShieldAlertIcon } from "lucide-react";
+import {
+  PlusIcon,
+  XIcon,
+  RefreshCwIcon,
+  ShieldAlertIcon,
+  CheckCircle2Icon,
+  XCircleIcon,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // 扩展 IpBlacklist 类型，添加解析后的字段
 type ParsedIpBlacklist = IpBlacklist & {
@@ -40,6 +55,10 @@ export default function IpBlacklistPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<string>("");
   const [verifyIp, setVerifyIp] = useState("");
+  const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<{ ip: string; inBlacklist: boolean } | null>(
+    null,
+  );
 
   // 查询黑名单最后更新时间
   const queryBlackListLastUpdateTime = useCallback(async () => {
@@ -135,11 +154,11 @@ export default function IpBlacklistPage() {
     try {
       const response = await ipBlacklistsApi.verify({ query_ip: verifyIp.trim() });
       const ipsetResult = response.data?.data?.[0]?.ipset_result;
-      if (ipsetResult) {
-        toast.success(ti("ipInBlacklist", { ip: verifyIp }));
-      } else {
-        toast.info(ti("ipNotInBlacklist", { ip: verifyIp }));
-      }
+      setVerifyResult({
+        ip: verifyIp.trim(),
+        inBlacklist: !!ipsetResult,
+      });
+      setIsVerifyDialogOpen(true);
     } catch (error) {
       console.error("Failed to verify ip:", error);
       toast.error(ti("verifyFailed"));
@@ -157,34 +176,26 @@ export default function IpBlacklistPage() {
   }, [router, loadIpBlacklists, queryBlackListLastUpdateTime]);
 
   // 删除数据
-  const handleDelete = (item: ParsedIpBlacklist) => {
-    setDeleteTarget(item);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const executeDelete = useCallback(
-    async (item: ParsedIpBlacklist) => {
-      setIsDeleting(true);
-      try {
-        await ipBlacklistsApi.delete(item.id);
-        toast.success(tc("deleteSuccess") || "删除成功");
-        await loadIpBlacklists();
-      } catch (error) {
-        console.error("Failed to delete ip blacklist:", error);
-        toast.error(tc("deleteFailed") || "删除失败");
-      } finally {
-        setIsDeleting(false);
-        setDeleteTarget(null);
-      }
-    },
-    [loadIpBlacklists, tc],
-  );
-
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget) return;
-    await executeDelete(deleteTarget);
-    setIsDeleteDialogOpen(false);
-  }, [deleteTarget, executeDelete]);
+    setIsDeleting(true);
+    try {
+      await ipBlacklistsApi.delete({
+        target_ip: deleteTarget.ip_address,
+        target_name: deleteTarget.target_name,
+        target_port: deleteTarget.target_port,
+        target_protocol: deleteTarget.target_protocol,
+      });
+      toast.success(tc("deleteSuccess") || "删除成功");
+      await loadIpBlacklists();
+    } catch (error) {
+      console.error("Failed to delete ip blacklist:", error);
+      toast.error(tc("deleteFailed") || "删除失败");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  }, [deleteTarget, tc]);
 
   // 创建数据
   const handleCreate = useCallback(
@@ -207,7 +218,10 @@ export default function IpBlacklistPage() {
   const columns = createIpBlackColumns<ParsedIpBlacklist>({
     ti,
     tc,
-    onDelete: handleDelete,
+    onDelete: (item: ParsedIpBlacklist) => {
+      setDeleteTarget(item);
+      setIsDeleteDialogOpen(true);
+    },
   });
 
   return (
@@ -303,6 +317,44 @@ export default function IpBlacklistPage() {
             onOpenChange={setIsCreateDialogOpen}
             onSubmit={handleCreate}
           />
+
+          {/* 验证结果对话框 */}
+          <Dialog open={isVerifyDialogOpen} onOpenChange={setIsVerifyDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {verifyResult?.inBlacklist ? (
+                    <CheckCircle2Icon className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <XCircleIcon className="h-5 w-5 text-red-500" />
+                  )}
+                  {ti("verifyBlacklist")}
+                </DialogTitle>
+                <DialogDescription>
+                  {verifyResult && (
+                    <>
+                      <span
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          verifyResult.inBlacklist
+                            ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                            : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        }`}
+                      >
+                        {verifyResult.inBlacklist
+                          ? ti("ipInBlacklist", { ip: verifyResult.ip })
+                          : ti("ipNotInBlacklist", { ip: verifyResult.ip })}
+                      </span>
+                    </>
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button onClick={() => setIsVerifyDialogOpen(false)}>
+                  {tc("confirm") || "确定"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </SidebarInset>
     </SidebarProvider>

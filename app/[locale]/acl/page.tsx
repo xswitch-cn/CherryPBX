@@ -1,76 +1,192 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/navigation";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
 import { SiteHeader } from "@/app/[locale]/dashboard/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AclTable } from "./components/acl-table";
+import { ListTable, ListPagination } from "@/components/ui/list-components";
+import { Button } from "@/components/ui/button";
+import { AclApi } from "@/lib/api-client";
+import { type Acl, type ListAclQuery } from "@repo/api-client";
+import { toast } from "sonner";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { CreateAclDialog } from "./components/create-acl-dialog";
+import { createAclColumns } from "./acl-columns";
+import { PlusIcon } from "lucide-react";
 
-const mockAclData = [
-  {
-    id: 1,
-    aclName: "内网允许",
-    network: "192.168.0.0/16",
-    action: "Allow",
-    description: "允许内网访问",
-    status: "Active",
-  },
-  {
-    id: 2,
-    aclName: "办公网络",
-    network: "10.0.0.0/8",
-    action: "Allow",
-    description: "办公网络访问",
-    status: "Active",
-  },
-  {
-    id: 3,
-    aclName: "合作伙伴",
-    network: "172.16.0.0/12",
-    action: "Allow",
-    description: "合作伙伴网络",
-    status: "Active",
-  },
-  {
-    id: 4,
-    aclName: "拒绝恶意IP",
-    network: "203.0.113.0/24",
-    action: "Deny",
-    description: "拒绝恶意IP段",
-    status: "Active",
-  },
-  {
-    id: 5,
-    aclName: "测试环境",
-    network: "192.168.100.0/24",
-    action: "Allow",
-    description: "测试环境访问",
-    status: "Inactive",
-  },
-];
+// 每页显示数量
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const DEFAULT_PAGE_SIZE = 10;
 
-export default function AclPage() {
+export default function AcllistPage() {
   const router = useRouter();
   const t = useTranslations("pages");
+  const ta = useTranslations("acl");
+  const tc = useTranslations("common");
+
+  const [aclLists, setAclLists] = useState<Acl[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // 加载数据列表
+  const loadAcllists = useCallback(
+    async (page: number = currentPage, size: number = pageSize) => {
+      setIsLoading(true);
+      try {
+        const queryParams: ListAclQuery = {
+          page,
+          perPage: size,
+        };
+        const response = await AclApi.list(queryParams);
+        const responseData = response.data;
+        setAclLists(responseData.data || []);
+        setTotalCount(responseData.rowCount || 0);
+        setPageCount(responseData.pageCount || 0);
+        setCurrentPage(page);
+        setPageSize(size);
+      } catch (error) {
+        console.error("Failed to load acl:", error);
+        toast.error(tc("loadFailed"));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [tc],
+  );
+
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) router.push("/login");
+
+    // 加载数据
+    void loadAcllists();
   }, [router]);
+
+  // 处理翻页
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      void loadAcllists(newPage, pageSize);
+    },
+    [loadAcllists, pageSize],
+  );
+
+  // 处理每页数量变化
+  const handlePageSizeChange = useCallback(
+    (newSize: number) => {
+      void loadAcllists(1, newSize);
+    },
+    [loadAcllists],
+  );
+
+  // 删除数据
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    // try {
+    //   await AclApi.delete({});
+    //   toast.success(tc("deleteSuccess") || "删除成功");
+    //   await loadAcllists();
+    // } catch (error) {
+    //   console.error("Failed to delete ip blacklist:", error);
+    //   toast.error(tc("deleteFailed") || "删除失败");
+    // } finally {
+    //   setIsDeleting(false);
+    //   setDeleteTarget(null);
+    // }
+  }, [deleteTarget, tc]);
+
+  // 创建数据
+  const handleCreate = useCallback(
+    async (data: any) => {
+      try {
+        await AclApi.create(data);
+        toast.success(tc("createSuccess"));
+        await loadAcllists();
+        setIsCreateDialogOpen(false);
+      } catch (error) {
+        console.error("Failed to create ip blacklist:", error);
+        toast.error(tc("createFailed"));
+        throw new Error("create failed");
+      }
+    },
+    [loadAcllists, tc],
+  );
+
+  // 列配置
+  const columns = createAclColumns({
+    ta,
+    tc,
+    onDelete: (item: Acl) => {
+      setDeleteTarget(item);
+      setIsDeleteDialogOpen(true);
+    },
+  });
+
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader title={t("acl")} />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="px-4 lg:px-6">
-                <AclTable data={mockAclData} />
-              </div>
-            </div>
-          </div>
+        <div className="px-4 lg:px-6 py-4 md:py-6 flex flex-col gap-4">
+          {/* 操作栏 */}
+          {/* <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div />
+              <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                {ta("addAcl")}
+              </Button>
+          </div> */}
+
+          {/* 表格 */}
+          <ListTable<Acl>
+            columns={columns}
+            data={aclLists}
+            isLoading={isLoading}
+            emptyText={tc("noData") || "暂无数据"}
+            loadingText={tc("loading") || "加载中..."}
+            translationPrefix="table"
+          />
+
+          {/* 分页 */}
+          <ListPagination
+            currentPage={currentPage}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            totalCount={totalCount}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            translationPrefix="table"
+          />
+
+          <DeleteConfirmDialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+            title={ta("deleteAcl")}
+            description={tc("DeleteItem", {
+              item: deleteTarget?.target_name || deleteTarget?.ip_address || "",
+            })}
+            onSubmit={handleConfirmDelete}
+            deleteText={tc("confirm") || "确定"}
+            cancelText={tc("cancel") || "取消"}
+            isLoading={isDeleting}
+          />
+
+          {/* 新增对话框 */}
+          <CreateAclDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            onSubmit={handleCreate}
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>

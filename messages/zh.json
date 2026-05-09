@@ -1415,8 +1415,10 @@
     "deny": "拒绝",
     "searchAcl": "搜索ACL...",
     "noAcl": "未找到ACL记录。",
+    "deleteAcl": "删除Acl",
     "editingAcl": "正在编辑ACL：{name}",
-    "deletedAcl": "已删除ACL：{name}"
+    "deletedAcl": "已删除ACL：{name}",
+    "Default Rule": "默认规则"
   },
   "logs": {
     "logs": "系统日志",

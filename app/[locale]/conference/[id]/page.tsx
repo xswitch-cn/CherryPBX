@@ -217,11 +217,7 @@ export default function ConferenceDetailPage() {
           console.error(error);
         });
     }
-  }, [
-	conference,
-	setParticipants,
-	setIsTableEditing
-]);
+  }, [conference, setParticipants, setIsTableEditing]);
 
   const handleMembersAdded = useCallback(async () => {
     if (!conference) return;

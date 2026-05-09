@@ -62,12 +62,23 @@ export interface IvrsApi {
   update(id: number | string, data: any): ReturnType<ApiClient["request"]>;
   delete(id: number | string): ReturnType<ApiClient["request"]>;
   getActions(ivrId: number): ReturnType<ApiClient["request"]>;
+  getAction(ivrId: number, actionId: number): ReturnType<ApiClient["request"]>;
   addAction(ivrId: number, data: any): ReturnType<ApiClient["request"]>;
+  updateAction(ivrId: number, actionId: number, data: any): ReturnType<ApiClient["request"]>;
   deleteAction(ivrId: number, actionId: number): ReturnType<ApiClient["request"]>;
   getRoutes(ivrId: number): ReturnType<ApiClient["request"]>;
   getFileTypes(): ReturnType<ApiClient["request"]>;
   getRingtones(): ReturnType<ApiClient["request"]>;
   getMediaFiles(type?: string, search?: string): ReturnType<ApiClient["request"]>;
+  getActionTypes(): ReturnType<ApiClient["request"]>;
+  getConferenceProfiles(): ReturnType<ApiClient["request"]>;
+  getQueues(): ReturnType<ApiClient["request"]>;
+  getMeetingRooms(): ReturnType<ApiClient["request"]>;
+  getConferenceRooms(): ReturnType<ApiClient["request"]>;
+  getScripts(): ReturnType<ApiClient["request"]>;
+  getExtensions(): ReturnType<ApiClient["request"]>;
+  getIvrMediaFiles(): ReturnType<ApiClient["request"]>;
+  getContexts(): ReturnType<ApiClient["request"]>;
 }
 
 export function createIvrsApi(client: ApiClient): IvrsApi {
@@ -117,6 +128,13 @@ export function createIvrsApi(client: ApiClient): IvrsApi {
       });
     },
 
+    getAction(ivrId: number, actionId: number) {
+      return client.request({
+        method: "GET",
+        path: `/api/ivrs/${ivrId}/actions/${actionId}`,
+      });
+    },
+
     deleteAction(ivrId: number, actionId: number) {
       return client.request({
         method: "DELETE",
@@ -128,6 +146,14 @@ export function createIvrsApi(client: ApiClient): IvrsApi {
       return client.request({
         method: "POST",
         path: `/api/ivrs/${ivrId}/actions`,
+        body: data,
+      });
+    },
+
+    updateAction(ivrId: number, actionId: number, data: any) {
+      return client.request({
+        method: "PUT",
+        path: `/api/ivrs/${ivrId}/actions/${actionId}`,
         body: data,
       });
     },
@@ -164,6 +190,69 @@ export function createIvrsApi(client: ApiClient): IvrsApi {
       return client.request({
         method: "GET",
         path,
+      });
+    },
+
+    getActionTypes() {
+      return client.request({
+        method: "GET",
+        path: "/api/dicts?realm=IVR_ACTION_TYPE",
+      });
+    },
+
+    getConferenceProfiles() {
+      return client.request({
+        method: "GET",
+        path: "/api/conference_profiles",
+      });
+    },
+
+    getQueues() {
+      return client.request({
+        method: "GET",
+        path: "/api/queues",
+      });
+    },
+
+    getMeetingRooms() {
+      return client.request({
+        method: "GET",
+        path: "/api/meetings/user_id",
+      });
+    },
+
+    getConferenceRooms() {
+      return client.request({
+        method: "GET",
+        path: "/api/conference_rooms",
+      });
+    },
+
+    getScripts() {
+      return client.request({
+        method: "GET",
+        path: "/api/media_files/scripts_list",
+      });
+    },
+
+    getExtensions() {
+      return client.request({
+        method: "GET",
+        path: "/api/extensions?page_size=5000",
+      });
+    },
+
+    getIvrMediaFiles() {
+      return client.request({
+        method: "GET",
+        path: "/api/media_files?client=IVR&perPage=1000",
+      });
+    },
+
+    getContexts() {
+      return client.request({
+        method: "GET",
+        path: "/api/contexts",
       });
     },
   };

@@ -6,17 +6,64 @@ import { useRouter } from "@/navigation";
 import { AppSidebar } from "@/app/[locale]/dashboard/components/app-sidebar";
 import { SiteHeader } from "@/app/[locale]/dashboard/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { ListTable, ListPagination } from "@/components/ui/list-components";
 import { toast } from "sonner";
 import { type IVR, createIvrColumns } from "./ivr-columns";
-import { CreateIvrDialog, DeleteIvrDialog, CreateIvrFormData } from "./components/ivr-table";
+import { CreateIvrDialog, CreateIvrFormData } from "./components/ivr-table";
 import { ivrsApi, type ListIvrsQuery, type ListIvrsResponse } from "@/lib/api-client";
 
-// 每页显示数量
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const DEFAULT_PAGE_SIZE = 10;
+
+function parseMediaValue(value: any): any {
+  if (!value || value === "") return null;
+  if (typeof value === "object") return value;
+  const val = String(value).trim();
+  if (!val) return null;
+  if (val.startsWith("{")) {
+    try {
+      return JSON.parse(val);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function getAudioName(value: any, nameField?: string): string {
+  if (nameField) {
+    const nameVal = String(nameField).trim();
+    if (nameVal) return nameVal;
+  }
+  const parsed = parseMediaValue(value);
+  if (parsed) {
+    if (parsed.media_name) return String(parsed.media_name).trim();
+    if (parsed.media_path) {
+      const mediaPath = String(parsed.media_path).trim();
+      if (mediaPath.startsWith("tone_stream://")) {
+        return mediaPath.replace("tone_stream://", "");
+      }
+      if (mediaPath.startsWith("phrase:")) {
+        return mediaPath.replace("phrase:", "");
+      }
+      const parts = mediaPath.split("/");
+      return parts[parts.length - 1] || "";
+    }
+  }
+  const val = String(value).trim();
+  if (!val) return "";
+  if (val.startsWith("tone_stream://")) {
+    return val.replace("tone_stream://", "");
+  }
+  if (val.startsWith("phrase:")) {
+    return val.replace("phrase:", "");
+  }
+  const parts = val.split("/");
+  return parts[parts.length - 1] || "";
+}
 
 export default function IvrPage() {
   const router = useRouter();
@@ -31,10 +78,7 @@ export default function IvrPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedIvr, setSelectedIvr] = useState<IVR | null>(null);
 
-  // 加载IVR列表
   const loadIvrs = useCallback(
     async (page: number = currentPage, size: number = pageSize) => {
       setIsLoading(true);
@@ -53,16 +97,18 @@ export default function IvrPage() {
             name: string;
             description: string;
             identifier: string;
-            greet_long?: string;
-            greet_short?: string;
+            greet_long?: any;
+            greet_long_name?: string;
+            greet_short?: any;
+            greet_short_name?: string;
             count_actions?: number;
           }) => ({
             id: item.id,
             name: item.name,
             description: item.description,
             identifier: item.identifier,
-            welcomeAudio: item.greet_long || "",
-            shortWelcomeAudio: item.greet_short || "",
+            welcomeAudio: getAudioName(item.greet_long, item.greet_long_name),
+            shortWelcomeAudio: getAudioName(item.greet_short, item.greet_short_name),
             actionCount: item.count_actions || 0,
           }),
         );
@@ -85,13 +131,20 @@ export default function IvrPage() {
     [currentPage, pageSize, tt],
   );
 
-  // 处理删除IVR
-  const handleDeleteIvr = useCallback((ivr: IVR) => {
-    setSelectedIvr(ivr);
-    setIsDeleteOpen(true);
-  }, []);
+  const handleDeleteIvr = useCallback(
+    async (ivr: IVR) => {
+      try {
+        await ivrsApi.delete(ivr.id);
+        toast.success(tt("deleteSuccess"));
+        await loadIvrs(currentPage, pageSize);
+      } catch (error) {
+        console.error("Failed to delete ivr:", error);
+        toast.error(tt("deleteFailed"));
+      }
+    },
+    [loadIvrs, currentPage, pageSize, tt],
+  );
 
-  // 创建IVR
   const handleCreate = useCallback(
     async (data: CreateIvrFormData) => {
       try {
@@ -106,23 +159,6 @@ export default function IvrPage() {
       }
     },
     [loadIvrs, pageSize, tt],
-  );
-
-  // 删除IVR
-  const handleDelete = useCallback(
-    async (id: number) => {
-      try {
-        await ivrsApi.delete(id);
-        toast.success(tt("deleteSuccess"));
-        await loadIvrs(currentPage, pageSize);
-        setIsDeleteOpen(false);
-        setSelectedIvr(null);
-      } catch (error) {
-        console.error("Failed to delete ivr:", error);
-        toast.error(tt("deleteFailed"));
-      }
-    },
-    [loadIvrs, currentPage, pageSize, tt],
   );
 
   // 处理翻页
@@ -181,13 +217,15 @@ export default function IvrPage() {
                   </div>
 
                   {/* 表格 */}
-                  <ListTable<IVR>
-                    columns={ivrColumns}
-                    data={ivrs}
-                    isLoading={isLoading}
-                    emptyText={tt("noIvr")}
-                    translationPrefix="table"
-                  />
+                  <div className="rounded-lg border">
+                    <ListTable<IVR>
+                      columns={ivrColumns}
+                      data={ivrs}
+                      isLoading={isLoading}
+                      emptyText={tt("noIvr")}
+                      translationPrefix="table"
+                    />
+                  </div>
 
                   {/* 分页 */}
                   <ListPagination
@@ -199,6 +237,7 @@ export default function IvrPage() {
                     onPageSizeChange={handlePageSizeChange}
                     pageSizeOptions={PAGE_SIZE_OPTIONS}
                     translationPrefix="table"
+                    showTotalCount={false}
                   />
                 </div>
               </div>
@@ -209,14 +248,6 @@ export default function IvrPage() {
 
       {/* 新增弹窗 */}
       <CreateIvrDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} onSubmit={handleCreate} />
-
-      {/* 删除弹窗 */}
-      <DeleteIvrDialog
-        open={isDeleteOpen}
-        onOpenChange={setIsDeleteOpen}
-        ivr={selectedIvr}
-        onSubmit={handleDelete}
-      />
     </SidebarProvider>
   );
 }

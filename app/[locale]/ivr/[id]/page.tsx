@@ -15,7 +15,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { ivrsApi } from "@/lib/api-client";
 import { EditableSection, EditableField } from "@/components/ui/editable-section";
@@ -218,22 +218,6 @@ export default function IvrDetailPage() {
           return parts[parts.length - 1] || "";
         };
 
-        console.log("IVR data loaded:", {
-          greet_long: data.greet_long,
-          greet_long_name: data.greet_long_name,
-          greet_long_url: data.greet_long_url,
-          invalid_sound: data.invalid_sound,
-          exit_sound: data.exit_sound,
-          transfer_sound: data.transfer_sound,
-        });
-
-        const testGreetLong = getAudioUrl(data.greet_long);
-        const testGreetName = getAudioName(data.greet_long, "greet_long_name");
-        console.log("Parsed greet_long:", {
-          url: testGreetLong,
-          name: testGreetName,
-        });
-
         setIvr({
           id: data.id,
           name: data.name,
@@ -388,8 +372,6 @@ export default function IvrDetailPage() {
     [ivr, tt],
   );
 
-  const handleCancel = useCallback(() => {}, []);
-
   const handleAudioChange = useCallback(
     async (name: string, mediaFile: any) => {
       if (!ivr) return;
@@ -440,10 +422,6 @@ export default function IvrDetailPage() {
     [ivr, tt],
   );
 
-  const handleBack = useCallback(() => {
-    router.push("/ivr");
-  }, [router]);
-
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isLoggedIn");
     if (!isLoggedIn) {
@@ -476,8 +454,7 @@ export default function IvrDetailPage() {
           <SiteHeader title={t("ivr")} />
           <div className="flex flex-1 flex-col items-center justify-center">
             <div className="text-center">{tt("ivrNotFound")}</div>
-            <Button onClick={handleBack} className="mt-4">
-              <ArrowLeftIcon className="mr-2 h-4 w-4" />
+            <Button onClick={() => router.push("/ivr")} className="mt-4">
               {tt("backToList")}
             </Button>
           </div>
@@ -514,7 +491,6 @@ export default function IvrDetailPage() {
                       ...ivr,
                     }}
                     onSave={handleSave}
-                    onCancel={handleCancel}
                   >
                     <EditableField label={tt("id")} name="id" value={ivr.id} type="text" disabled />
 
@@ -601,7 +577,6 @@ export default function IvrDetailPage() {
                       ...ivr,
                     }}
                     onSave={handleExtendedSave}
-                    onCancel={handleCancel}
                   >
                     <EditableField
                       label={tt("maxFailures")}
@@ -710,161 +685,84 @@ export default function IvrDetailPage() {
                   <div className="rounded-lg border bg-background mt-8">
                     <div className="flex items-center justify-between px-4 py-3 border-b">
                       <h3 className="font-medium">{tt("ivrKeyActions")}</h3>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="h-8 w-20"
-                        onClick={() => setShowActionDialog(true)}
-                      >
-                        <PlusIcon className="mr-1 h-4 w-4" />
+                      <Button variant="default" size="sm" onClick={() => setShowActionDialog(true)}>
+                        <PlusIcon className="mr-1 h-3.5 w-3.5" />
                         {tt("add")}
                       </Button>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b bg-gray-50">
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              {tt("id")}
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              {tt("digits")}
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              {tt("matchPrefix")}
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              {tt("action")}
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              {tt("body")}
-                            </th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              {tt("operation")}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {ivrActions.length > 0 ? (
-                            ivrActions.map((action) => {
-                              const renderBody = () => {
-                                switch (action.action) {
-                                  case "IVR_QUEUE":
-                                    return (
-                                      <a
-                                        href={`/queues/${action.args}`}
-                                        className="text-sm text-teal-600 hover:text-teal-900"
-                                      >
-                                        {action.body}
-                                      </a>
-                                    );
-                                  case "IVR_SCRIPT":
-                                    return (
-                                      <a
-                                        href={`/media_files/${action.args}`}
-                                        className="text-sm text-teal-600 hover:text-teal-900"
-                                      >
-                                        {action.body}
-                                      </a>
-                                    );
-                                  case "IVR_PLAY":
-                                    if (action.args?.startsWith("tone_stream")) {
-                                      return (
-                                        <span className="text-sm text-gray-900">{action.body}</span>
-                                      );
-                                    } else {
-                                      return (
-                                        <a
-                                          href={`/media_files/${encodeURIComponent(action.args || "")}`}
-                                          className="text-sm text-teal-600 hover:text-teal-900"
-                                        >
-                                          {action.body}
-                                        </a>
-                                      );
-                                    }
-                                  case "IVR_MEETING_ROOM":
-                                    return (
-                                      <a
-                                        href={`/meetings/${action.args}`}
-                                        className="text-sm text-teal-600 hover:text-teal-900"
-                                      >
-                                        {action.body}
-                                      </a>
-                                    );
-                                  case "IVR_CONFERENCE_ROOM":
-                                    return (
-                                      <a
-                                        href={`/conference_rooms/${action.args}`}
-                                        className="text-sm text-teal-600 hover:text-teal-900"
-                                      >
-                                        {action.body}
-                                      </a>
-                                    );
-                                  default:
-                                    return (
-                                      <span className="text-sm text-gray-900">{action.body}</span>
-                                    );
-                                }
-                              };
-
-                              return (
-                                <tr key={action.id} className="hover:bg-gray-50">
-                                  <td className="px-4 py-3 text-sm text-gray-900">{action.id}</td>
-                                  <td className="px-4 py-3">
-                                    <a
-                                      href={`/ivrs/${ivrId}/actions/${action.id}`}
-                                      className="text-sm text-teal-600 hover:text-teal-900"
-                                    >
-                                      {action.digits}
-                                    </a>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-500">
-                                    {action.match_prefix === "1" ? tt("yes") : tt("no")}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-500">
-                                    {action.action}
-                                  </td>
-                                  <td className="px-4 py-3">{renderBody()}</td>
-                                  <td className="px-4 py-3">
-                                    <button
-                                      onClick={() => void handleDeleteAction(action)}
-                                      className="text-sm text-gray-600 hover:text-gray-900"
-                                    >
-                                      {tt("delete")}
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          ) : (
-                            <tr>
-                              <td
-                                colSpan={6}
-                                className="px-4 py-8 text-center text-sm text-gray-500"
+                    <div className="divide-y divide-gray-100">
+                      <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <div className="col-span-1">{tt("id")}</div>
+                        <div className="col-span-1">{tt("digits")}</div>
+                        <div className="col-span-2">{tt("matchPrefix")}</div>
+                        <div className="col-span-2">{tt("action")}</div>
+                        <div className="col-span-4">内容</div>
+                        <div className="col-span-2">{tt("operations")}</div>
+                      </div>
+                      {ivrActions.length > 0 ? (
+                        ivrActions.map((action) => (
+                          <div
+                            key={action.id}
+                            className="px-4 py-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="grid grid-cols-12 gap-4 text-sm">
+                              <div className="col-span-1">
+                                <span className="text-muted-foreground">{action.id}</span>
+                              </div>
+                              <div className="col-span-1">
+                                <a
+                                  href={`/ivr/${ivrId}/actions/${action.id}`}
+                                  className="text-teal-600 hover:text-teal-700 transition-colors"
+                                >
+                                  {action.digits}
+                                </a>
+                              </div>
+                              <div className="col-span-2">
+                                <span className="text-muted-foreground">
+                                  {String(action.match_prefix) === "1" ? tt("yes") : tt("no")}
+                                </span>
+                              </div>
+                              <div className="col-span-2">
+                                <span className="text-muted-foreground">{action.action}</span>
+                              </div>
+                              <div className="col-span-4">
+                                <span className="text-foreground truncate">
+                                  {action.body || action.args || "-"}
+                                </span>
+                              </div>
+                              <div className="col-span-2">
+                                <button
+                                  onClick={() => void handleDeleteAction(action)}
+                                  className="text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  {tt("delete")}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-8 text-center">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                              <svg
+                                className="w-6 h-6 text-muted-foreground"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
                               >
-                                <div className="flex flex-col items-center gap-2">
-                                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                                    <svg
-                                      className="w-6 h-6 text-gray-400"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={1.5}
-                                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                                      />
-                                    </svg>
-                                  </div>
-                                  <span>{tt("noData")}</span>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                                />
+                              </svg>
+                            </div>
+                            <span className="text-muted-foreground">{tt("noData")}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

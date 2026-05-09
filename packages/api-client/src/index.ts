@@ -160,6 +160,9 @@ export type {
   CreateIpBlacklistRequest,
 } from "./apis/ip-blacklists.api";
 
+export { createAclApi } from "./apis/acl.api";
+export type { Acl, ListAclQuery } from "./apis/acl.api";
+
 export { toQueryString } from "./utils/query";
 export { isBrowser, isNode, isWebWorker } from "./utils/env";
 export { DEFAULT_TIMEOUT_MS, DEFAULT_HEADERS } from "./constants";

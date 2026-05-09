@@ -190,7 +190,7 @@ export default function RoutesPage() {
     void loadRoutes();
     void destinationType();
     void getContexts();
-  }, [router, loadRoutes]);
+  }, [router]);
 
   // 处理导出路由
   const handleExportUsers = useCallback(async () => {

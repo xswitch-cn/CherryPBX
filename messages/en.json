@@ -1493,8 +1493,10 @@
     "deny": "Deny",
     "searchAcl": "Search ACL...",
     "noAcl": "No ACL entries found.",
+    "deleteAcl": "Delete Acl",
     "editingAcl": "Editing ACL: {name}",
-    "deletedAcl": "Deleted ACL: {name}"
+    "deletedAcl": "Deleted ACL: {name}",
+    "Default Rule": "Default Rule"
   },
   "logs": {
     "logs": "System Logs",

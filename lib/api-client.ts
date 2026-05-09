@@ -14,6 +14,7 @@ import {
   createSipApi,
   createIvrsApi,
   createIpBlacklistsApi,
+  createAclApi,
   type Route,
   type ListRoutesQuery,
   type ListRoutesResponse,
@@ -140,6 +141,7 @@ export const timeRulesApi = createTimeRulesApi(apiClient);
 export const logsApi = createLogsApi(apiClient);
 export const diagnosticsApi = createDiagnosticsApi(apiClient);
 export const ipBlacklistsApi = createIpBlacklistsApi(apiClient);
+export const AclApi = createAclApi(apiClient);
 
 export type {
   ApiClient,

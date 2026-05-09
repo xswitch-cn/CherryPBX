@@ -999,7 +999,9 @@
     "deleteSuccess": "删除成功",
     "deleteFailed": "删除失败",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "callSource": "呼叫源",
+    "number": "号码"
   },
   "did": {
     "addDid": "添加DID",

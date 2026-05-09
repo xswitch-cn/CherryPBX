@@ -160,7 +160,7 @@ export default function ContextsPage() {
         t: tt,
         tt: ttt,
         onDelete: handleDeleteContext,
-        onToggleDid: (context, enabled) =>  handleToggleDid(context, enabled),
+        onToggleDid: (context, enabled) => handleToggleDid(context, enabled),
       }),
     [tt, ttt, handleDeleteContext, handleToggleDid],
   );

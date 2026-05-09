@@ -327,7 +327,7 @@ export function IvrActionDialog({
             label: context.name,
           }));
           setArgsOptions(options);
-          setArgsLabel(t("args"));
+          setArgsLabel(t("callSource"));
           setArgsValue(options.length > 0 ? options[0].value : "");
           setShowArgs(true);
           setBodyLabel(t("number"));

@@ -1433,7 +1433,21 @@
     "deleteAcl": "删除Acl",
     "editingAcl": "正在编辑ACL：{name}",
     "deletedAcl": "已删除ACL：{name}",
-    "Default Rule": "默认规则"
+    "Default Rule": "默认规则",
+    "Node Type": "数据类型",
+    "Port Rule": "端口规则",
+    "Port Value": "端口值",
+    "Single Port": "单个端口",
+    "Mutiple Ports": "多个端口",
+    "Port Range": "端口范围",
+    "Range": "范围",
+    "Max": "最大值",
+    "Min": "最小值",
+    "Numbers separated by ',', for example '101,102'": "不同的值用 ',' 分隔 例如 '101,102'",
+    "validationDigitsOnly": "只能输入数字",
+    "validationDigitsAndCommas": "只能输入数字和逗号",
+    "validationNoConsecutiveCommas": "逗号不能连续",
+    "validationCommaPosition": "逗号不能在开头或结尾"
   },
   "logs": {
     "logs": "系统日志",
@@ -1717,6 +1731,7 @@
     "createParam": "创建参数",
     "description": "描述",
     "Add Param": "添加参数",
+     "Add Variable": "添加变量",
     "year": "年",
     "month": "月"
   }

@@ -161,7 +161,7 @@ export type {
 } from "./apis/ip-blacklists.api";
 
 export { createAclApi } from "./apis/acl.api";
-export type { Acl, ListAclQuery } from "./apis/acl.api";
+export type { Acl, ListAclQuery, AclParams } from "./apis/acl.api";
 
 export { toQueryString } from "./utils/query";
 export { isBrowser, isNode, isWebWorker } from "./utils/env";

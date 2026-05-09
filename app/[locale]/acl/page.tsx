@@ -91,18 +91,18 @@ export default function AcllistPage() {
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
-    // try {
-    //   await AclApi.delete({});
-    //   toast.success(tc("deleteSuccess") || "删除成功");
-    //   await loadAcllists();
-    // } catch (error) {
-    //   console.error("Failed to delete ip blacklist:", error);
-    //   toast.error(tc("deleteFailed") || "删除失败");
-    // } finally {
-    //   setIsDeleting(false);
-    //   setDeleteTarget(null);
-    // }
-  }, [deleteTarget, tc]);
+    try {
+      await AclApi.delete(deleteTarget.id);
+      toast.success(tc("deleteSuccess") || "删除成功");
+      await loadAcllists(currentPage, pageSize);
+    } catch (error) {
+      console.error("Failed to delete acl:", error);
+      toast.error(tc("deleteFailed") || "删除失败");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  }, [deleteTarget, currentPage, pageSize, loadAcllists, tc]);
 
   // 创建数据
   const handleCreate = useCallback(
@@ -110,10 +110,10 @@ export default function AcllistPage() {
       try {
         await AclApi.create(data);
         toast.success(tc("createSuccess"));
-        await loadAcllists();
+        await loadAcllists(1, pageSize);
         setIsCreateDialogOpen(false);
       } catch (error) {
-        console.error("Failed to create ip blacklist:", error);
+        console.error("Failed to create acl:", error);
         toast.error(tc("createFailed"));
         throw new Error("create failed");
       }
@@ -125,6 +125,7 @@ export default function AcllistPage() {
   const columns = createAclColumns({
     ta,
     tc,
+    router,
     onDelete: (item: Acl) => {
       setDeleteTarget(item);
       setIsDeleteDialogOpen(true);
@@ -138,13 +139,13 @@ export default function AcllistPage() {
         <SiteHeader title={t("acl")} />
         <div className="px-4 lg:px-6 py-4 md:py-6 flex flex-col gap-4">
           {/* 操作栏 */}
-          {/* <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <div />
-              <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
-                <PlusIcon className="mr-2 h-4 w-4" />
-                {ta("addAcl")}
-              </Button>
-          </div> */}
+            <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+              <PlusIcon className="mr-2 h-4 w-4" />
+              {ta("addAcl")}
+            </Button>
+          </div>
 
           {/* 表格 */}
           <ListTable<Acl>
@@ -173,7 +174,7 @@ export default function AcllistPage() {
             onOpenChange={setIsDeleteDialogOpen}
             title={ta("deleteAcl")}
             description={tc("DeleteItem", {
-              item: deleteTarget?.target_name || deleteTarget?.ip_address || "",
+              item: deleteTarget?.name || "",
             })}
             onSubmit={handleConfirmDelete}
             deleteText={tc("confirm") || "确定"}

@@ -65,7 +65,7 @@ export function createAclApi(client: ApiClient) {
     },
 
     /**
-     * 创建许
+     * 创建
      */
     create(data: CreateAclRequest) {
       return client.request<CreateAclResponse>({

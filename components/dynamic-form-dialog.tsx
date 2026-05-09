@@ -59,7 +59,7 @@ export interface FieldConfig {
   required?: boolean;
   defaultValue?: any;
   // select 类型的选项
-  options?: Array<{ value: string; label: string }>;
+  options?: Array<{ value: string | number; label: string }>;
   // radio 类型的选项
   radioOptions?: Array<{ value: string | number; label: string }>;
   // 验证规则
@@ -93,6 +93,11 @@ export interface FieldConfig {
   onChange?: (value: any) => void;
   // 密码字段是否显示切换按钮
   showPasswordToggle?: boolean;
+  // 输入时的实时校验和转换函数
+  inputTransform?: (
+    value: string,
+    formValues?: Record<string, any>,
+  ) => { value: string; error?: string };
 }
 
 // 表单配置
@@ -137,6 +142,26 @@ export const buildZodSchema = (fields: FieldConfig[], t: (key: string) => string
           return val;
         });
         break;
+      case "select":
+        // select 类型：根据 options 的值类型构建 schema
+        if (field.options && field.options.length > 0) {
+          const hasNumberOption = field.options.some((opt) => typeof opt.value === "number");
+          const hasStringOption = field.options.some((opt) => typeof opt.value === "string");
+
+          if (hasNumberOption && hasStringOption) {
+            // 混合类型：支持数字和字符串
+            fieldSchema = z.union([z.number(), z.string()]);
+          } else if (hasNumberOption) {
+            // 纯数字类型
+            fieldSchema = z.number();
+          } else {
+            // 纯字符串类型
+            fieldSchema = z.string();
+          }
+        } else {
+          fieldSchema = z.string();
+        }
+        break;
       case "date":
         fieldSchema = z.date().refine((val) => val !== undefined, {
           message: `${field.label}${t("options")}`,
@@ -172,13 +197,19 @@ export const buildZodSchema = (fields: FieldConfig[], t: (key: string) => string
             }
             return val;
           });
+      } else if (field.type === "select") {
+        // select 类型的必填验证
+        fieldSchema = fieldSchema.refine(
+          (val) => {
+            if (val === undefined || val === null || val === "") return false;
+            return true;
+          },
+          { message: `${field.label}${t("options")}` },
+        );
       } else {
         try {
           // 尝试作为字符串类型处理
-          const errorMessage =
-            field.type === "select"
-              ? `${field.label}${t("options")}`
-              : `${field.label}${t("required")}`;
+          const errorMessage = `${field.label}${t("required")}`;
           fieldSchema = (fieldSchema as z.ZodString).min(1, errorMessage);
         } catch {
           // 如果不是字符串类型，保持原样
@@ -226,7 +257,14 @@ export const buildZodSchema = (fields: FieldConfig[], t: (key: string) => string
 
     // 如果非必填，允许为空
     if (!field.required && field.type !== "date") {
-      fieldSchema = fieldSchema.optional().or(z.literal(""));
+      if (field.type === "select") {
+        // select 类型：允许 undefined 或空字符串
+        fieldSchema = fieldSchema.optional().or(z.literal(""));
+      } else if (field.type === "number") {
+        fieldSchema = fieldSchema.optional().or(z.literal(""));
+      } else {
+        fieldSchema = fieldSchema.optional().or(z.literal(""));
+      }
     }
 
     shape[field.name] = fieldSchema;
@@ -270,9 +308,17 @@ const FormFieldRenderer = ({
                 </FormLabel>
                 <Select
                   onValueChange={(value) => {
-                    formField.onChange(value);
+                    // 尝试将字符串值转换回原始类型
+                    let convertedValue: string | number = value;
+                    if (field.options) {
+                      const option = field.options.find((opt) => String(opt.value) === value);
+                      if (option && typeof option.value === "number") {
+                        convertedValue = Number(value);
+                      }
+                    }
+                    formField.onChange(convertedValue);
                     if (field.onChange) {
-                      field.onChange(value);
+                      field.onChange(convertedValue);
                     }
                   }}
                   value={formField.value !== undefined ? String(formField.value) : undefined}
@@ -285,7 +331,7 @@ const FormFieldRenderer = ({
                   </FormControl>
                   <SelectContent>
                     {field.options?.map((option) => (
-                      <SelectItem key={option.value} value={String(option.value)}>
+                      <SelectItem key={String(option.value)} value={String(option.value)}>
                         {option.label}
                       </SelectItem>
                     ))}
@@ -535,8 +581,35 @@ const FormFieldRenderer = ({
           <FormField
             control={form.control}
             name={field.name}
-            render={({ field: formField }) => {
+            render={({ field: formField, fieldState }) => {
               const safeValue = formField.value ?? (field.type === "number" ? undefined : "");
+
+              const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                const newValue = e.target.value;
+
+                // 如果定义了 inputTransform，使用它进行校验
+                if (field.inputTransform) {
+                  const currentValues = form.getValues();
+                  const result = field.inputTransform(newValue, currentValues);
+
+                  // 更新表单值（保留用户输入）
+                  formField.onChange(result.value);
+
+                  // 如果有错误信息，设置表单错误
+                  if (result.error) {
+                    form.setError(field.name, {
+                      type: "manual",
+                      message: result.error,
+                    });
+                  } else {
+                    // 清除错误
+                    form.clearErrors(field.name);
+                  }
+                } else {
+                  formField.onChange(newValue);
+                }
+              };
+
               return (
                 <FormItem>
                   <FormLabel>
@@ -550,6 +623,8 @@ const FormFieldRenderer = ({
                       placeholder={field.placeholder}
                       disabled={field.disabled}
                       type="text"
+                      onChange={handleChange}
+                      className={fieldState.error ? "border-destructive" : ""}
                     />
                   </FormControl>
                   {field.description && <FormDescription>{field.description}</FormDescription>}

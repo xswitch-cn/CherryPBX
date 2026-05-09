@@ -38,6 +38,7 @@ import {
   createTimeRulesApi,
   createLogsApi,
   createDiagnosticsApi,
+  createBackupApi,
   type Hotline,
   type DOD,
   type ListHotlinesResponse,
@@ -82,6 +83,8 @@ import {
   type ListIvrsResponse,
   type IvrsApi,
   type DiagnosticsApi,
+  type BackupApi,
+  type SchemaItem,
 } from "@repo/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 
@@ -142,6 +145,7 @@ export const logsApi = createLogsApi(apiClient);
 export const diagnosticsApi = createDiagnosticsApi(apiClient);
 export const ipBlacklistsApi = createIpBlacklistsApi(apiClient);
 export const AclApi = createAclApi(apiClient);
+export const backupApi = createBackupApi(apiClient);
 
 export type {
   ApiClient,
@@ -204,4 +208,6 @@ export type {
   ListIvrsResponse,
   IvrsApi,
   DiagnosticsApi,
+  BackupApi,
+  SchemaItem,
 };

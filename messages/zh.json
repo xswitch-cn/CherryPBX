@@ -1534,7 +1534,19 @@
     "restore": "还原",
     "download": "下载",
     "noBackups": "未找到备份。",
-    "searchBackups": "搜索备份..."
+    "searchBackups": "搜索备份...",
+    "databaseBackup": "数据库备份",
+    "databaseBackupDescription": "请在非高峰期使用数据库备份功能",
+    "databaseRestore": "数据库还原",
+    "databaseRestoreDescription": "数据库还原操作不可逆，请谨慎操作",
+    "includeCdrs": "备份是否包含话单",
+    "startBackup": "开始备份",
+    "selectBackupFile": "选择备份文件",
+    "backupSuccess": "备份成功，可在媒体文件中下载",
+    "backupFail": "备份失败",
+    "restoreSuccess": "还原成功",
+    "restoreFail": "还原失败",
+    "noBackupFiles": "暂无备份文件"
   },
   "contexts": {
     "contexts": "呼叫源",

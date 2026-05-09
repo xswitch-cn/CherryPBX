@@ -115,6 +115,9 @@ export type {
   CaptureResponse,
 } from "./apis/diagnostics.api";
 
+export { createBackupApi } from "./apis/backup.api";
+export type { BackupApi, SchemaItem, BackupResponse } from "./apis/backup.api";
+
 export type {
   Gateway,
   ListGatewaysQuery,

@@ -62,8 +62,12 @@ export interface IvrsApi {
   update(id: number | string, data: any): ReturnType<ApiClient["request"]>;
   delete(id: number | string): ReturnType<ApiClient["request"]>;
   getActions(ivrId: number): ReturnType<ApiClient["request"]>;
+  addAction(ivrId: number, data: any): ReturnType<ApiClient["request"]>;
   deleteAction(ivrId: number, actionId: number): ReturnType<ApiClient["request"]>;
   getRoutes(ivrId: number): ReturnType<ApiClient["request"]>;
+  getFileTypes(): ReturnType<ApiClient["request"]>;
+  getRingtones(): ReturnType<ApiClient["request"]>;
+  getMediaFiles(type?: string, search?: string): ReturnType<ApiClient["request"]>;
 }
 
 export function createIvrsApi(client: ApiClient): IvrsApi {
@@ -120,10 +124,46 @@ export function createIvrsApi(client: ApiClient): IvrsApi {
       });
     },
 
+    addAction(ivrId: number, data: any) {
+      return client.request({
+        method: "POST",
+        path: `/api/ivrs/${ivrId}/actions`,
+        body: data,
+      });
+    },
+
     getRoutes(ivrId: number) {
       return client.request({
         method: "GET",
         path: `/api/ivrs/${ivrId}/routes`,
+      });
+    },
+
+    getFileTypes() {
+      return client.request({
+        method: "GET",
+        path: "/api/dicts?realm=MFILE_TYPE",
+      });
+    },
+
+    getRingtones() {
+      return client.request({
+        method: "GET",
+        path: "/api/dicts?realm=TONE",
+      });
+    },
+
+    getMediaFiles(type?: string, search?: string) {
+      let path = "/api/media_files?perPage=500";
+      if (type && type !== "all" && type !== "ringtone") {
+        path += `&type=${type}`;
+      }
+      if (search) {
+        path += `&q=${encodeURIComponent(search)}`;
+      }
+      return client.request({
+        method: "GET",
+        path,
       });
     },
   };

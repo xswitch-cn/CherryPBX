@@ -176,7 +176,7 @@ export default function GatewaysPage() {
     }
 
     void loadGateways();
-  }, [router, loadGateways]);
+  }, [router]);
 
   return (
     <SidebarProvider>

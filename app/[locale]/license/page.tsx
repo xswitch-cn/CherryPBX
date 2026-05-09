@@ -84,7 +84,7 @@ export default function LicensePage() {
     if (!isLoggedIn) router.push("/login");
 
     void loadLicenses();
-  }, [router, loadLicenses]);
+  }, [router]);
 
   // 处理翻页
   const handlePageChange = useCallback(

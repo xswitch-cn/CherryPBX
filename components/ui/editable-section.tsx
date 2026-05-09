@@ -3,7 +3,6 @@
 import React, { useState, ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useForm, UseFormReturn, FieldValues, DefaultValues, SubmitHandler } from "react-hook-form";
-import { useFormState } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,6 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Combobox,
-  ComboboxInput,
   ComboboxContent,
   ComboboxList,
   ComboboxItem,
@@ -95,6 +93,8 @@ interface EditableFieldProps {
   disabled?: boolean;
   /**  onChange 回调函数 */
   onChange?: (value: any) => void;
+  /** 是否显示随机密码按钮 */
+  showRandomButton?: boolean;
 }
 
 /**
@@ -122,6 +122,7 @@ export function EditableField({
   isEditing = false,
   disabled = false,
   onChange,
+  showRandomButton = false,
 }: EditableFieldProps) {
   const form = useFormContext();
   const registerFieldName = React.useContext(RenderedFieldsContext);
@@ -270,6 +271,23 @@ export function EditableField({
                       </ComboboxList>
                     </ComboboxContent>
                   </Combobox>
+                ) : showRandomButton ? (
+                  <div className="flex gap-2">
+                    <Input placeholder={inputPlaceholder} {...field} disabled={disabled} />
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      onClick={() => {
+                        const randomPassword = Math.floor(
+                          100000 + Math.random() * 900000,
+                        ).toString();
+                        field.onChange(randomPassword);
+                      }}
+                    >
+                      {t("randomPassword")}
+                    </Button>
+                  </div>
                 ) : (
                   <Input placeholder={inputPlaceholder} {...field} disabled={disabled} />
                 )}
@@ -390,8 +408,6 @@ export function EditableSection<T extends FieldValues>({
     defaultValues,
     mode: "onChange",
   });
-
-  const formState = useFormState({ control: form.control });
 
   const handleEdit = () => {
     // 重置表单为当前值

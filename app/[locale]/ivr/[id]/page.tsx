@@ -15,11 +15,12 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { ArrowLeftIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { ivrsApi } from "@/lib/api-client";
 import { EditableSection, EditableField } from "@/components/ui/editable-section";
-import { AudioPlayer } from "@/components/ui/audio-player";
+import { AudioField } from "@/components/ui/audio-field";
+import { IvrActionDialog } from "@/components/ui/ivr-action-dialog";
 
 export interface IVRDetail {
   id: number;
@@ -78,6 +79,12 @@ export interface IvrRoute {
   description: string;
 }
 
+function getFileExt(filename: string): string {
+  if (!filename) return "";
+  const parts = filename.split(".");
+  return parts.length > 1 ? parts[parts.length - 1] : "";
+}
+
 export default function IvrDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -89,6 +96,7 @@ export default function IvrDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [ivrActions, setIvrActions] = useState<IvrAction[]>([]);
   const [ivrRoutes, setIvrRoutes] = useState<IvrRoute[]>([]);
+  const [showActionDialog, setShowActionDialog] = useState(false);
 
   const loadIvrDetail = useCallback(async () => {
     setIsLoading(true);
@@ -100,7 +108,132 @@ export default function IvrDetailPage() {
       ]);
 
       const data = ivrResponse.data as any;
-      if (data) {
+      if (data && data.id) {
+        const parseMediaValue = (value: any): any => {
+          if (!value || value === "") return null;
+
+          if (typeof value === "object") {
+            return value;
+          }
+
+          const val = String(value).trim();
+          if (!val) return null;
+
+          if (val.startsWith("{")) {
+            try {
+              const parsed = JSON.parse(val);
+              return parsed;
+            } catch (e) {
+              console.warn("Failed to parse media value:", val, e);
+              return null;
+            }
+          }
+          return null;
+        };
+
+        const getMediaPath = (value: any): string => {
+          if (!value || value === "") return "";
+
+          const parsed = parseMediaValue(value);
+          if (parsed) {
+            if (parsed.media_path) return String(parsed.media_path).trim();
+            if (parsed.path) return String(parsed.path).trim();
+          }
+
+          const val = String(value).trim();
+          return val;
+        };
+
+        const getAudioUrl = (value: any): string => {
+          if (!value || value === "") return "";
+
+          const parsed = parseMediaValue(value);
+          if (parsed) {
+            if (parsed.media_path?.startsWith("tone_stream://")) {
+              const toneValue = parsed.media_path.replace("tone_stream://", "");
+              return `/api/tones/${toneValue}`;
+            }
+            if (parsed.media_path?.startsWith("phrase:")) {
+              return "";
+            }
+            if (parsed.media_id) {
+              return `/api/media_files/${parsed.media_id}.wav`;
+            }
+          }
+
+          const mediaPath = getMediaPath(value);
+          if (!mediaPath) return "";
+
+          if (mediaPath.startsWith("tone_stream://")) {
+            const toneValue = mediaPath.replace("tone_stream://", "");
+            return `/api/tones/${toneValue}`;
+          }
+
+          if (mediaPath.startsWith("phrase:")) {
+            return "";
+          }
+
+          const numericMatch = mediaPath.match(/(\d+)/);
+          if (numericMatch) {
+            return `/api/media_files/${numericMatch[1]}.wav`;
+          }
+
+          return "";
+        };
+
+        const getAudioName = (value: any, nameField: string): string => {
+          if (data[nameField]) {
+            const nameVal = String(data[nameField]).trim();
+            if (nameVal) return nameVal;
+          }
+
+          const parsed = parseMediaValue(value);
+          if (parsed) {
+            if (parsed.media_name) return String(parsed.media_name).trim();
+            if (parsed.media_path) {
+              const mediaPath = String(parsed.media_path).trim();
+              if (mediaPath.startsWith("tone_stream://")) {
+                return mediaPath.replace("tone_stream://", "");
+              }
+              if (mediaPath.startsWith("phrase:")) {
+                return mediaPath.replace("phrase:", "");
+              }
+              const parts = mediaPath.split("/");
+              return parts[parts.length - 1] || "";
+            }
+          }
+
+          const mediaPath = getMediaPath(value);
+          if (!mediaPath) return "";
+
+          if (mediaPath.startsWith("tone_stream://")) {
+            return mediaPath.replace("tone_stream://", "");
+          }
+
+          if (mediaPath.startsWith("phrase:")) {
+            return mediaPath.replace("phrase:", "");
+          }
+
+          const parts = mediaPath.split("/");
+          return parts[parts.length - 1] || "";
+        };
+
+        console.log("IVR data loaded:", {
+          greet_long: data.greet_long,
+          greet_long_name: data.greet_long_name,
+          greet_long_url: data.greet_long_url,
+          invalid_sound: data.invalid_sound,
+          exit_sound: data.exit_sound,
+          transfer_sound: data.transfer_sound,
+        });
+
+        const testGreetLong = getAudioUrl(data.greet_long);
+        const testGreetName = getAudioName(data.greet_long, "greet_long_name");
+        console.log("Parsed greet_long:", {
+          url: testGreetLong,
+          name: testGreetName,
+        });
+
         setIvr({
           id: data.id,
           name: data.name,
@@ -108,20 +241,20 @@ export default function IvrDetailPage() {
           key: data.identifier || data.key || "",
           digit_len: data.digit_len || 1,
           greet_long: data.greet_long,
-          greet_long_name: data.greet_long_name,
-          greet_long_url: data.greet_long_url,
+          greet_long_name: getAudioName(data.greet_long, "greet_long_name"),
+          greet_long_url: data.greet_long_url || getAudioUrl(data.greet_long),
           greet_short: data.greet_short,
-          greet_short_name: data.greet_short_name,
-          greet_short_url: data.greet_short_url,
+          greet_short_name: getAudioName(data.greet_short, "greet_short_name"),
+          greet_short_url: data.greet_short_url || getAudioUrl(data.greet_short),
           invalid_sound: data.invalid_sound,
-          invalid_sound_name: data.invalid_sound_name,
-          invalid_sound_url: data.invalid_sound_url,
+          invalid_sound_name: getAudioName(data.invalid_sound, "invalid_sound_name"),
+          invalid_sound_url: data.invalid_sound_url || getAudioUrl(data.invalid_sound),
           exit_sound: data.exit_sound,
-          exit_sound_name: data.exit_sound_name,
-          exit_sound_url: data.exit_sound_url,
+          exit_sound_name: getAudioName(data.exit_sound, "exit_sound_name"),
+          exit_sound_url: data.exit_sound_url || getAudioUrl(data.exit_sound),
           transfer_sound: data.transfer_sound,
-          transfer_sound_name: data.transfer_sound_name,
-          transfer_sound_url: data.transfer_sound_url,
+          transfer_sound_name: getAudioName(data.transfer_sound, "transfer_sound_name"),
+          transfer_sound_url: data.transfer_sound_url || getAudioUrl(data.transfer_sound),
           max_failures: data.max_failures,
           max_timeouts: data.max_timeouts,
           exec_on_max_failures: data.exec_on_max_failures,
@@ -135,11 +268,11 @@ export default function IvrDetailPage() {
           timeout: data.timeout,
           pin: data.pin,
           pin_file: data.pin_file,
-          pin_file_name: data.pin_file_name,
-          pin_file_url: data.pin_file_url,
+          pin_file_name: getAudioName(data.pin_file, "pin_file_name"),
+          pin_file_url: data.pin_file_url || getAudioUrl(data.pin_file),
           bad_pin_file: data.bad_pin_file,
-          bad_pin_file_name: data.bad_pin_file_name,
-          bad_pin_file_url: data.bad_pin_file_url,
+          bad_pin_file_name: getAudioName(data.bad_pin_file, "bad_pin_file_name"),
+          bad_pin_file_url: data.bad_pin_file_url || getAudioUrl(data.bad_pin_file),
         });
       } else {
         setIvr(null);
@@ -203,7 +336,109 @@ export default function IvrDetailPage() {
     [ivr, tt],
   );
 
+  const handleExtendedSave = useCallback(
+    async (formData: any) => {
+      if (!ivr) return false;
+
+      try {
+        const updateData: any = {
+          max_failures: formData.max_failures ? parseInt(formData.max_failures) : undefined,
+          max_timeouts: formData.max_timeouts ? parseInt(formData.max_timeouts) : undefined,
+          exec_on_max_failures: formData.exec_on_max_failures || "",
+          exec_on_max_timeouts: formData.exec_on_max_timeouts || "",
+          confirm_macro: formData.confirm_macro || "",
+          confirm_key: formData.confirm_key || "",
+          tts_engine: formData.tts_engine || "",
+          tts_voice: formData.tts_voice || "",
+          confirm_attempts: formData.confirm_attempts
+            ? parseInt(formData.confirm_attempts)
+            : undefined,
+          inter_digit_timeout: formData.inter_digit_timeout
+            ? parseInt(formData.inter_digit_timeout)
+            : undefined,
+          timeout: formData.timeout ? parseInt(formData.timeout) : undefined,
+          pin: formData.pin || "",
+        };
+        await ivrsApi.update(ivr.id, updateData);
+        const updatedIvr: IVRDetail = {
+          ...ivr,
+          max_failures: updateData.max_failures,
+          max_timeouts: updateData.max_timeouts,
+          exec_on_max_failures: updateData.exec_on_max_failures,
+          exec_on_max_timeouts: updateData.exec_on_max_timeouts,
+          confirm_macro: updateData.confirm_macro,
+          confirm_key: updateData.confirm_key,
+          tts_engine: updateData.tts_engine,
+          tts_voice: updateData.tts_voice,
+          confirm_attempts: updateData.confirm_attempts,
+          inter_digit_timeout: updateData.inter_digit_timeout,
+          timeout: updateData.timeout,
+          pin: updateData.pin,
+        };
+        setIvr(updatedIvr);
+
+        toast.success(tt("updateSuccess"));
+        return true;
+      } catch (error) {
+        console.error("Failed to update ivr extended info:", error);
+        toast.error(tt("updateFailed"));
+        return false;
+      }
+    },
+    [ivr, tt],
+  );
+
   const handleCancel = useCallback(() => {}, []);
+
+  const handleAudioChange = useCallback(
+    async (name: string, mediaFile: any) => {
+      if (!ivr) return;
+
+      try {
+        const nameField = `${name}_name`;
+        const urlField = `${name}_url`;
+
+        let updateValue = "";
+        let nameValue = "";
+        let urlValue = "";
+
+        if (mediaFile && mediaFile.id && mediaFile.abs_path) {
+          const mediaInfo = {
+            media_id: mediaFile.id,
+            media_path: mediaFile.abs_path,
+            media_type: mediaFile.type || "",
+          };
+          updateValue = JSON.stringify(mediaInfo);
+          nameValue = mediaFile.name || "";
+
+          if (mediaFile.type === "RINGTONE") {
+            const tone = mediaFile.rel_path?.replace(/^tone_stream:\/\//, "") || mediaFile.v || "";
+            urlValue = `/api/tones/${tone}`;
+          } else {
+            const ext = mediaFile.ext || getFileExt(mediaFile.abs_path);
+            urlValue = `/api/media_files/${mediaFile.id}.${ext}`;
+          }
+        }
+
+        const updateData: any = {
+          [name]: updateValue,
+        };
+        await ivrsApi.update(ivr.id, updateData);
+
+        const updatedIvr: IVRDetail = {
+          ...ivr,
+          [name]: updateValue,
+          [nameField]: nameValue,
+          [urlField]: urlValue,
+        };
+        setIvr(updatedIvr);
+      } catch (error) {
+        console.error("Failed to update audio:", error);
+        toast.error(tt("updateFailed"));
+      }
+    },
+    [ivr, tt],
+  );
 
   const handleBack = useCallback(() => {
     router.push("/ivr");
@@ -314,124 +549,49 @@ export default function IvrDetailPage() {
                       required
                     />
 
-                    <EditableField
+                    <AudioField
                       label={tt("greeting")}
                       name="greet_long"
-                      value={
-                        ivr.greet_long_url ? (
-                          <AudioPlayer
-                            url={ivr.greet_long_url!}
-                            text={ivr.greet_long_name || tt("noAudio")}
-                          />
-                        ) : (
-                          tt("noAudio")
-                        )
-                      }
-                      type="custom"
-                      renderEdit={() =>
-                        ivr.greet_long_url ? (
-                          <AudioPlayer
-                            url={ivr.greet_long_url!}
-                            text={ivr.greet_long_name || tt("noAudio")}
-                          />
-                        ) : null
-                      }
+                      value={ivr.greet_long}
+                      valueName={ivr.greet_long_name}
+                      valueUrl={ivr.greet_long_url}
+                      onChange={(...args) => void handleAudioChange(...args)}
                     />
 
-                    <EditableField
+                    <AudioField
                       label={tt("shortGreeting")}
                       name="greet_short"
-                      value={
-                        ivr.greet_short_url ? (
-                          <AudioPlayer
-                            url={ivr.greet_short_url!}
-                            text={ivr.greet_short_name || tt("noAudio")}
-                          />
-                        ) : (
-                          tt("noAudio")
-                        )
-                      }
-                      type="custom"
-                      renderEdit={() =>
-                        ivr.greet_short_url ? (
-                          <AudioPlayer
-                            url={ivr.greet_short_url!}
-                            text={ivr.greet_short_name || tt("noAudio")}
-                          />
-                        ) : null
-                      }
+                      value={ivr.greet_short}
+                      valueName={ivr.greet_short_name}
+                      valueUrl={ivr.greet_short_url}
+                      onChange={(...args) => void handleAudioChange(...args)}
                     />
 
-                    <EditableField
+                    <AudioField
                       label={tt("invalidSound")}
                       name="invalid_sound"
-                      value={
-                        ivr.invalid_sound_url ? (
-                          <AudioPlayer
-                            url={ivr.invalid_sound_url!}
-                            text={ivr.invalid_sound_name || tt("noAudio")}
-                          />
-                        ) : (
-                          tt("noAudio")
-                        )
-                      }
-                      type="custom"
-                      renderEdit={() =>
-                        ivr.invalid_sound_url ? (
-                          <AudioPlayer
-                            url={ivr.invalid_sound_url!}
-                            text={ivr.invalid_sound_name || tt("noAudio")}
-                          />
-                        ) : null
-                      }
+                      value={ivr.invalid_sound}
+                      valueName={ivr.invalid_sound_name}
+                      valueUrl={ivr.invalid_sound_url}
+                      onChange={(...args) => void handleAudioChange(...args)}
                     />
 
-                    <EditableField
+                    <AudioField
                       label={tt("exitSound")}
                       name="exit_sound"
-                      value={
-                        ivr.exit_sound_url ? (
-                          <AudioPlayer
-                            url={ivr.exit_sound_url!}
-                            text={ivr.exit_sound_name || tt("noAudio")}
-                          />
-                        ) : (
-                          tt("noAudio")
-                        )
-                      }
-                      type="custom"
-                      renderEdit={() =>
-                        ivr.exit_sound_url ? (
-                          <AudioPlayer
-                            url={ivr.exit_sound_url!}
-                            text={ivr.exit_sound_name || tt("noAudio")}
-                          />
-                        ) : null
-                      }
+                      value={ivr.exit_sound}
+                      valueName={ivr.exit_sound_name}
+                      valueUrl={ivr.exit_sound_url}
+                      onChange={(...args) => void handleAudioChange(...args)}
                     />
 
-                    <EditableField
+                    <AudioField
                       label={tt("transferSound")}
                       name="transfer_sound"
-                      value={
-                        ivr.transfer_sound_url ? (
-                          <AudioPlayer
-                            url={ivr.transfer_sound_url!}
-                            text={ivr.transfer_sound_name || tt("noAudio")}
-                          />
-                        ) : (
-                          tt("noAudio")
-                        )
-                      }
-                      type="custom"
-                      renderEdit={() =>
-                        ivr.transfer_sound_url ? (
-                          <AudioPlayer
-                            url={ivr.transfer_sound_url!}
-                            text={ivr.transfer_sound_name || tt("noAudio")}
-                          />
-                        ) : null
-                      }
+                      value={ivr.transfer_sound}
+                      valueName={ivr.transfer_sound_name}
+                      valueUrl={ivr.transfer_sound_url}
+                      onChange={(...args) => void handleAudioChange(...args)}
                     />
                   </EditableSection>
 
@@ -440,149 +600,122 @@ export default function IvrDetailPage() {
                     defaultValues={{
                       ...ivr,
                     }}
-                    onSave={() => true}
+                    onSave={handleExtendedSave}
                     onCancel={handleCancel}
-                    showEditButton={false}
                   >
                     <EditableField
                       label={tt("maxFailures")}
                       name="max_failures"
-                      value={ivr.max_failures || "-"}
+                      value={ivr.max_failures || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("maxTimeouts")}
                       name="max_timeouts"
-                      value={ivr.max_timeouts || "-"}
+                      value={ivr.max_timeouts || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("execOnMaxFailures")}
                       name="exec_on_max_failures"
-                      value={ivr.exec_on_max_failures || "-"}
+                      value={ivr.exec_on_max_failures || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("execOnMaxTimeouts")}
                       name="exec_on_max_timeouts"
-                      value={ivr.exec_on_max_timeouts || "-"}
+                      value={ivr.exec_on_max_timeouts || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("confirmMacro")}
                       name="confirm_macro"
-                      value={ivr.confirm_macro || "-"}
+                      value={ivr.confirm_macro || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("confirmKey")}
                       name="confirm_key"
-                      value={ivr.confirm_key || "-"}
+                      value={ivr.confirm_key || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("ttsEngine")}
                       name="tts_engine"
-                      value={ivr.tts_engine || "-"}
+                      value={ivr.tts_engine || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("ttsVoice")}
                       name="tts_voice"
-                      value={ivr.tts_voice || "-"}
+                      value={ivr.tts_voice || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("confirmAttempts")}
                       name="confirm_attempts"
-                      value={ivr.confirm_attempts || "-"}
+                      value={ivr.confirm_attempts || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("interDigitTimeout")}
                       name="inter_digit_timeout"
-                      value={
-                        ivr.inter_digit_timeout
-                          ? `${ivr.inter_digit_timeout} ${tt("milliseconds")}`
-                          : "-"
-                      }
+                      value={ivr.inter_digit_timeout || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("inputTimeout")}
                       name="timeout"
-                      value={ivr.timeout ? `${ivr.timeout} ${tt("milliseconds")}` : "-"}
+                      value={ivr.timeout || ""}
                       type="text"
-                      disabled
                     />
 
                     <EditableField
                       label={tt("pin")}
                       name="pin"
-                      value={ivr.pin || "-"}
+                      value={ivr.pin || ""}
                       type="text"
-                      disabled
+                      showRandomButton
                     />
 
-                    <EditableField
+                    <AudioField
                       label={tt("pinFile")}
                       name="pin_file"
-                      value={
-                        ivr.pin_file_url ? (
-                          <AudioPlayer
-                            url={ivr.pin_file_url!}
-                            text={ivr.pin_file_name || tt("noAudio")}
-                          />
-                        ) : (
-                          tt("noAudio")
-                        )
-                      }
-                      type="custom"
-                      disabled
+                      value={ivr.pin_file}
+                      valueName={ivr.pin_file_name}
+                      valueUrl={ivr.pin_file_url}
+                      onChange={(...args) => void handleAudioChange(...args)}
                     />
 
-                    <EditableField
+                    <AudioField
                       label={tt("badPinFile")}
                       name="bad_pin_file"
-                      value={
-                        ivr.bad_pin_file_url ? (
-                          <AudioPlayer
-                            url={ivr.bad_pin_file_url!}
-                            text={ivr.bad_pin_file_name || tt("noAudio")}
-                          />
-                        ) : (
-                          tt("noAudio")
-                        )
-                      }
-                      type="custom"
-                      disabled
+                      value={ivr.bad_pin_file}
+                      valueName={ivr.bad_pin_file_name}
+                      valueUrl={ivr.bad_pin_file_url}
+                      onChange={(...args) => void handleAudioChange(...args)}
                     />
                   </EditableSection>
 
                   <div className="rounded-lg border bg-background mt-8">
                     <div className="flex items-center justify-between px-4 py-3 border-b">
                       <h3 className="font-medium">{tt("ivrKeyActions")}</h3>
-                      <Button variant="default" size="sm" className="h-8 w-20">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="h-8 w-20"
+                        onClick={() => setShowActionDialog(true)}
+                      >
                         <PlusIcon className="mr-1 h-4 w-4" />
                         {tt("add")}
                       </Button>
@@ -817,6 +950,13 @@ export default function IvrDetailPage() {
             </div>
           </div>
         </div>
+
+        <IvrActionDialog
+          open={showActionDialog}
+          onOpenChange={setShowActionDialog}
+          ivrId={ivrId}
+          onActionAdded={() => void loadIvrDetail()}
+        />
       </SidebarInset>
     </SidebarProvider>
   );

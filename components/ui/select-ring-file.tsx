@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { AudioPlayer } from "@/components/ui/audio-player";
 import { toast } from "sonner";
+import { ivrsApi } from "@/lib/api-client";
 
 interface MediaFile {
   id: number;
@@ -61,12 +62,28 @@ export function SelectRingFile({
   onSelect,
   notShowTypes = "",
 }: SelectRingFileProps) {
+  const t = useTranslations("common");
   const [mfileTypes, setMfileTypes] = React.useState<MediaFile[]>([]);
   const [mfileType, setMfileType] = React.useState<string>("all");
   const [ringtones, setRingtones] = React.useState<MediaFile[]>([]);
   const [mediaFiles, setMediaFiles] = React.useState<MediaFile[]>([]);
-  const [selectedFile, setSelectedFile] = React.useState<MediaFile | null>(null);
-  const [search, setSearch] = React.useState("");
+  const [selectedFileValue, setSelectedFileValue] = React.useState<string>("");
+
+  const getFileTypeLabel = (type: string): string => {
+    const translations: Record<string, string> = {
+      all: t("all"),
+      ringtone: t("ringtone"),
+      ASR: t("asr"),
+      SYSTEM: t("system"),
+      TTS: t("tts"),
+      UPLOAD: t("upload"),
+      LOCAL_STREAM: t("localStream"),
+      FAX: t("fax"),
+      RECORD: t("record"),
+      SCRIPT: t("script"),
+    };
+    return translations[type] || type;
+  };
 
   React.useEffect(() => {
     if (open) {
@@ -74,13 +91,14 @@ export function SelectRingFile({
       void loadRingtones();
       void loadMediaFiles();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const loadFileTypes = async () => {
     try {
-      const response = await fetch("/api/dicts?realm=MFILE_TYPE");
-      const data = await response.json();
-      const filteredData = data.filter((item: MediaFile) => !notShowTypes.includes(item.k || ""));
+      const response = await ivrsApi.getFileTypes();
+      const data = response.data as MediaFile[];
+      const filteredData = data.filter((item) => !notShowTypes.includes(item.k || ""));
       setMfileTypes(filteredData);
     } catch (error) {
       console.error("Failed to load file types:", error);
@@ -89,25 +107,18 @@ export function SelectRingFile({
 
   const loadRingtones = async () => {
     try {
-      const response = await fetch("/api/dicts?realm=TONE");
-      const data = await response.json();
+      const response = await ivrsApi.getRingtones();
+      const data = response.data as MediaFile[];
       setRingtones(data);
     } catch (error) {
       console.error("Failed to load ringtones:", error);
     }
   };
 
-  const loadMediaFiles = async (type?: string, searchQuery?: string) => {
+  const loadMediaFiles = async (type?: string) => {
     try {
-      let url = "/api/media_files?perPage=500";
-      if (type && type !== "all" && type !== "ringtone") {
-        url += `&type=${type}`;
-      }
-      if (searchQuery) {
-        url += `&q=${encodeURIComponent(searchQuery)}`;
-      }
-      const response = await fetch(url);
-      const data = await response.json();
+      const response = await ivrsApi.getMediaFiles(type);
+      const data = response.data as any;
       const filteredData = data.data?.filter(
         (item: MediaFile) => !notShowTypes.includes(item.type || ""),
       );
@@ -119,26 +130,28 @@ export function SelectRingFile({
 
   const handleFileTypeChange = (type: string) => {
     setMfileType(type);
-    setSelectedFile(null);
+    setSelectedFileValue("");
     if (type === "ringtone") {
       setMediaFiles([]);
     } else {
-      void loadMediaFiles(type, search);
+      void loadMediaFiles(type);
     }
   };
 
-  const handleSearch = (value: string) => {
-    setSearch(value);
-    if (mfileType !== "ringtone") {
-      void loadMediaFiles(mfileType, value);
-    }
+  const handleFileSelect = (value: string) => {
+    setSelectedFileValue(value);
   };
 
-  const handleFileSelect = (file: MediaFile) => {
-    setSelectedFile(file);
+  const getSelectedFile = (): MediaFile | null => {
+    if (!selectedFileValue) return null;
+    if (mfileType === "ringtone") {
+      return ringtones.find((tone) => String(tone.id ?? tone.k) === selectedFileValue) || null;
+    }
+    return mediaFiles.find((file) => String(file.id) === selectedFileValue) || null;
   };
 
   const handleOK = () => {
+    const selectedFile = getSelectedFile();
     if (selectedFile) {
       if (mfileType === "ringtone") {
         const ringtone: MediaFile = {
@@ -172,15 +185,17 @@ export function SelectRingFile({
     return "";
   };
 
+  const selectedFile = getSelectedFile();
+
   const fileOptions =
     mfileType === "ringtone"
       ? ringtones.map((tone) => ({
-          value: tone.id?.toString() || tone.k,
+          value: String(tone.id ?? tone.k),
           label: `[${tone.k}] ${tone.v}`,
           file: tone,
         }))
       : mediaFiles.map((file) => ({
-          value: file.id?.toString(),
+          value: String(file.id),
           label: `${file.name} | ${file.description || ""} [${formatSizeUnits(
             file.file_size || 0,
           )}]`,
@@ -197,15 +212,15 @@ export function SelectRingFile({
           <div className="space-y-2">
             <Label>文件类型</Label>
             <Select value={mfileType} onValueChange={handleFileTypeChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="选择文件类型" />
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t("selectFileType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">[全部]</SelectItem>
-                <SelectItem value="ringtone">[铃音]</SelectItem>
+                <SelectItem value="all">{getFileTypeLabel("all")}</SelectItem>
+                <SelectItem value="ringtone">{getFileTypeLabel("ringtone")}</SelectItem>
                 {mfileTypes.map((type) => (
                   <SelectItem key={type.k} value={type.k || ""}>
-                    {type.k}
+                    {getFileTypeLabel(type.k || "")}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -214,40 +229,23 @@ export function SelectRingFile({
 
           <div className="space-y-2">
             <Label>文件</Label>
-            {mfileType !== "ringtone" && (
-              <Input
-                type="text"
-                placeholder="搜索文件..."
-                value={search}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="mb-2"
-              />
-            )}
-            <div className="border rounded-md max-h-60 overflow-auto">
-              {fileOptions.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">没有找到文件</div>
-              ) : (
-                fileOptions.map((option) => (
-                  <div
-                    key={option.value}
-                    className={`p-2 cursor-pointer hover:bg-muted ${
-                      selectedFile?.id?.toString() === option.value ||
-                      selectedFile?.k === option.value
-                        ? "bg-muted"
-                        : ""
-                    }`}
-                    onClick={() => handleFileSelect(option.file)}
-                  >
+            <Select value={selectedFileValue} onValueChange={handleFileSelect}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="输入名称查找文件" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {fileOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
                     {option.label}
-                  </div>
-                ))
-              )}
-            </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {selectedFile && (
             <div className="space-y-2">
-              <Label>预览</Label>
+              <Label>试听</Label>
               <AudioPlayer
                 text={mfileType === "ringtone" ? selectedFile.k || "" : selectedFile.name || ""}
                 url={getMediaFileUrl(selectedFile)}

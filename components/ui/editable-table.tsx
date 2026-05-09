@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 
 /**
@@ -52,8 +53,8 @@ export interface EditableTableColumn<TData> {
   /** 列宽 */
   width?: string;
   /** 字段类型 */
-  type?: "text" | "number" | "select" | "switch" | "action";
-  /** Select 选项（type="select" 时使用） */
+  type?: "text" | "number" | "select" | "switch" | "action" | "radio";
+  /** Select/Radio 选项（type="select" 或 type="radio" 时使用） */
   options?: SelectOption[];
   /** 占位符 */
   placeholder?: string;
@@ -65,6 +66,8 @@ export interface EditableTableColumn<TData> {
   onInfoClick?: (row: TData) => void;
   /** 操作按钮配置（type="action" 时使用） */
   actions?: TableAction[];
+  /** RadioGroup 排列方向（type="radio" 时使用） */
+  radioDirection?: "row" | "column";
 }
 
 /**
@@ -143,6 +146,10 @@ function EditableTableCell<TData extends Record<string, unknown>>({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [editValue, setEditValue] = React.useState(String(rowValue ?? ""));
   const [isCellEditing, setIsCellEditing] = React.useState(false);
+
+  // Radio 类型的Hooks（始终调用，确保Hooks顺序一致）
+  const [isRadioEditing, setIsRadioEditing] = React.useState(false);
+  const [radioTempValue, setRadioTempValue] = React.useState<string>("");
 
   // 当外部 rowValue 变化时，同步更新本地编辑值
   React.useEffect(() => {
@@ -276,6 +283,114 @@ function EditableTableCell<TData extends Record<string, unknown>>({
     );
   }
 
+  // Radio 类型
+  if (column.type === "radio" && column.options) {
+    // 查找当前值对应的选项标签
+    const currentOption = column.options.find(
+      (opt) => String(opt.value) === String(rowValue ?? ""),
+    );
+    const displayLabel = currentOption ? currentOption.label : String(rowValue ?? "-");
+
+    // 点击文本进入编辑模式
+    const handleRadioClick = () => {
+      setRadioTempValue(String(rowValue ?? ""));
+      setIsRadioEditing(true);
+    };
+
+    // 处理选择变更（只更新临时值，不提交）
+    const handleRadioChange = (value: string) => {
+      setRadioTempValue(value);
+    };
+
+    // 确认提交并退出编辑模式
+    const handleRadioConfirm = () => {
+      setIsRadioEditing(false);
+      // 只有值真正改变时才触发 onChange
+      if (radioTempValue !== String(rowValue ?? "")) {
+        const newRowData = { ...row, [fieldName]: radioTempValue };
+        onChange?.({ rowId, key: fieldName, value: radioTempValue, rowData: newRowData });
+      }
+    };
+
+    // 取消编辑，恢复原值
+    const handleRadioCancel = () => {
+      setIsRadioEditing(false);
+      setRadioTempValue(String(rowValue ?? ""));
+    };
+
+    // 编辑模式：显示 RadioGroup
+    if (isRadioEditing) {
+      return (
+        <div
+          className={cn("flex items-center gap-1", isEditing && "bg-gray-100 rounded p-1")}
+          onBlur={handleRadioConfirm}
+          tabIndex={0}
+        >
+          <RadioGroup
+            value={radioTempValue}
+            onValueChange={handleRadioChange}
+            autoFocus
+            className={cn(
+              "w-full",
+              column.radioDirection === "row"
+                ? "flex flex-row flex-wrap gap-4"
+                : "flex flex-col gap-2",
+            )}
+          >
+            {column.options.map((option) => (
+              <div key={option.value} className="flex items-center space-x-2">
+                <RadioGroupItem value={option.value} id={`${rowId}-${fieldName}-${option.value}`} />
+                <label
+                  htmlFor={`${rowId}-${fieldName}-${option.value}`}
+                  className="text-sm font-medium leading-none cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </RadioGroup>
+          {column.showInfo && column.onInfoClick && (
+            <button
+              className="text-teal-500 hover:text-teal-600 text-sm shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                column.onInfoClick?.(row);
+              }}
+              type="button"
+            >
+              {t("details")}
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // 详情模式：显示文本，可点击编辑
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-1 cursor-pointer",
+          isEditing && "bg-gray-100 rounded p-1",
+        )}
+        onClick={handleRadioClick}
+      >
+        <span className="text-sm hover:text-foreground">{displayLabel}</span>
+        {column.showInfo && column.onInfoClick && (
+          <button
+            className="text-teal-500 hover:text-teal-600 text-sm shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              column.onInfoClick?.(row);
+            }}
+            type="button"
+          >
+            {t("details")}
+          </button>
+        )}
+      </div>
+    );
+  }
+
   // 文本输入类型（text / number）
   if (column.type === "text" || column.type === "number") {
     // 点击文本进入编辑模式
@@ -347,12 +462,18 @@ function EditableTableCell<TData extends Record<string, unknown>>({
     return (
       <div
         className={cn(
-          "flex items-center gap-1 cursor-pointer",
+          "flex items-center gap-1 cursor-pointer min-h-[28px]",
           isEditing && "bg-gray-100 rounded p-1",
         )}
         onClick={handleClick}
       >
-        <span className="text-sm hover:text-foreground">{String(rowValue ?? "-")}</span>
+        <span className="text-sm hover:text-foreground">
+          {rowValue === "" || rowValue === undefined || rowValue === null ? (
+            <span className="text-muted-foreground italic">{column.placeholder || "-"}</span>
+          ) : (
+            String(rowValue)
+          )}
+        </span>
         {column.showInfo && column.onInfoClick && (
           <button
             className="text-teal-500 hover:text-teal-600 text-sm shrink-0"
@@ -393,6 +514,7 @@ function EditableTableCell<TData extends Record<string, unknown>>({
  * - 文本/数字输入框：点击编辑，回车或失焦保存
  * - Switch：切换即生效
  * - Select：选择即生效
+ * - Radio：选择即生效
  *
  * @example
  * ```tsx
@@ -402,6 +524,10 @@ function EditableTableCell<TData extends Record<string, unknown>>({
  *     { key: "value", header: tc('value'), type: "text" },
  *     { key: "direction", header: "方向", type: "select", options: directionOptions },
  *     { key: "enabled", header: tc('enabled'), type: "switch" },
+ *     { key: "rule", header: "规则", type: "radio", options: [
+ *       { value: "allow", label: "允许" },
+ *       { value: "deny", label: "拒绝" }
+ *     ]},
  *   ]}
  *   data={rows}
  *   onChange={({ rowId, key, value, rowData }) => {

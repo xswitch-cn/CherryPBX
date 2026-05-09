@@ -1509,7 +1509,21 @@
     "deleteAcl": "Delete Acl",
     "editingAcl": "Editing ACL: {name}",
     "deletedAcl": "Deleted ACL: {name}",
-    "Default Rule": "Default Rule"
+    "Default Rule": "Default Rule",
+    "Node Type": "Node Type",
+    "Port Rule": "Port Rule",
+    "Port Value": "Port Value",
+    "Single Port": "Single Port",
+    "Mutiple Ports": "Mutiple Ports",
+    "Port Range": "Port Range",
+    "Range": "Range",
+    "Max": "Max Value",
+    "Min": "Min Value",
+    "Numbers separated by ',', for example '101,102'": "Numbers separated by ',', for example '101,102'",
+    "validationDigitsOnly": "Only digits are allowed",
+    "validationDigitsAndCommas": "Only digits and commas are allowed",
+    "validationNoConsecutiveCommas": "Consecutive commas are not allowed",
+    "validationCommaPosition": "Commas cannot be at the beginning or end"
   },
   "logs": {
     "logs": "System Logs",
@@ -1790,6 +1804,7 @@
     "createParam": "Create Parameter",
     "description": "Description",
     "Add Param": "Add Parameter",
+    "Add Variable": "Add Variable",
     "year": "Year",
     "month": "Month"
   },

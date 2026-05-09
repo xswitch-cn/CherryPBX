@@ -673,7 +673,7 @@ export default function GatewayDetailsPage({ params }: GatewayDetailsPageProps) 
                   <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                       <DialogTitle>
-                        {dialogType === "variable" ? "添加变量" : "添加参数"}
+                        {dialogType === "variable" ? tc("Add Variable") : tc("Add Param")}
                       </DialogTitle>
                     </DialogHeader>
                     <AddVariableForm

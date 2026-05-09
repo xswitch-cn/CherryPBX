@@ -55,14 +55,14 @@ export function createAclColumns({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              {/* <DropdownMenuItem
+              <DropdownMenuItem
                 onClick={() => {
                   router.push(`/acl/${row.original.id}`);
                 }}
               >
                 {tc("Details")}
-              </DropdownMenuItem> */}
-              {/* <DropdownMenuSeparator /> */}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
                 onClick={() => {

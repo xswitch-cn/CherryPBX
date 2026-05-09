@@ -26,32 +26,34 @@ export function createIvrColumns({
 }: {
   t: (key: string) => string;
   tt: (key: string) => string;
-  onDelete: (ivr: IVR) => void;
+  onDelete: (ivr: IVR) => Promise<void>;
 }): ColumnDef<IVR>[] {
   return [
     {
       accessorKey: "id",
       header: t("id"),
-      cell: ({ row }) => row.getValue("id"),
+      cell: ({ row }) => <span className="font-mono text-sm">{row.getValue("id")}</span>,
     },
     {
       accessorKey: "name",
       header: t("name"),
       cell: ({ row }) => (
-        <span className="text-primary hover:underline cursor-pointer">{row.getValue("name")}</span>
+        <span className="font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer">
+          {row.getValue("name")}
+        </span>
       ),
     },
     {
       accessorKey: "description",
       header: t("description"),
       cell: ({ row }) => (
-        <span className="text-muted-foreground line-clamp-2">{row.getValue("description")}</span>
+        <span className="text-muted-foreground text-sm">{row.getValue("description") || "-"}</span>
       ),
     },
     {
       accessorKey: "identifier",
       header: t("identifier"),
-      cell: ({ row }) => row.getValue("identifier"),
+      cell: ({ row }) => <span className="font-mono text-sm">{row.getValue("identifier")}</span>,
     },
     {
       accessorKey: "welcomeAudio",
@@ -59,11 +61,11 @@ export function createIvrColumns({
       cell: ({ row }) => {
         const audio = String(row.getValue("welcomeAudio"));
         if (!audio || audio === "undefined" || audio === "null")
-          return <span className="text-muted-foreground">-</span>;
+          return <span className="text-muted-foreground text-sm">-</span>;
         return (
-          <div className="flex items-center gap-2">
-            <MusicIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground text-sm truncate max-w-[120px]">{audio}</span>
+          <div className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium bg-muted text-muted-foreground">
+            <MusicIcon className="h-3 w-3" />
+            <span className="truncate max-w-[120px]">{audio}</span>
           </div>
         );
       },
@@ -74,11 +76,11 @@ export function createIvrColumns({
       cell: ({ row }) => {
         const audio = String(row.getValue("shortWelcomeAudio"));
         if (!audio || audio === "undefined" || audio === "null")
-          return <span className="text-muted-foreground">-</span>;
+          return <span className="text-muted-foreground text-sm">-</span>;
         return (
-          <div className="flex items-center gap-2">
-            <MusicIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground text-sm truncate max-w-[120px]">{audio}</span>
+          <div className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium bg-muted text-muted-foreground">
+            <MusicIcon className="h-3 w-3" />
+            <span className="truncate max-w-[120px]">{audio}</span>
           </div>
         );
       },
@@ -86,7 +88,20 @@ export function createIvrColumns({
     {
       accessorKey: "actionCount",
       header: t("action"),
-      cell: ({ row }) => row.getValue("actionCount"),
+      cell: ({ row }) => {
+        const ivr = row.original;
+        const count = row.getValue("actionCount") as number;
+        return (
+          <button
+            onClick={() => {
+              window.location.href = `/ivr/${ivr.id}`;
+            }}
+            className="text-primary hover:text-primary/80 transition-colors font-medium"
+          >
+            {count}
+          </button>
+        );
+      },
     },
     {
       id: "operations",
@@ -117,7 +132,7 @@ export function createIvrColumns({
               <DropdownMenuItem
                 variant="destructive"
                 onClick={() => {
-                  onDelete(ivr);
+                  void onDelete(ivr);
                 }}
               >
                 {tt("delete")}

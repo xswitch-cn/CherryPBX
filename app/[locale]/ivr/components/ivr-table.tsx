@@ -74,6 +74,29 @@ export function DeleteIvrDialog({
   onSubmit: (id: number) => Promise<void>;
 }) {
   const tt = useTranslations("ivr");
+  const ttt = useTranslations("table");
 
-  return <Dialog open={open} onOpenChange={onOpenChange}></Dialog>;
+  const handleDelete = () => {
+    if (ivr) {
+      void onSubmit(ivr.id);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{tt("delete")}</DialogTitle>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {ttt("cancel")}
+          </Button>
+          <Button variant="destructive" onClick={handleDelete}>
+            {ttt("confirm")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

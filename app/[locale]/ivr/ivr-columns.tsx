@@ -96,7 +96,7 @@ export function createIvrColumns({
             onClick={() => {
               window.location.href = `/ivr/${ivr.id}`;
             }}
-            className="text-primary hover:text-primary/80 transition-colors font-medium"
+            className="text-primary hover:text-primary/80 transition-colors"
           >
             {count}
           </button>

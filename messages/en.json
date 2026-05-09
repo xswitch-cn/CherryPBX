@@ -1077,7 +1077,9 @@
     "deleteSuccess": "Delete Success",
     "deleteFailed": "Delete Failed",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "callSource": "Call Source",
+    "number": "Number"
   },
   "did": {
     "addDid": "Add DID",

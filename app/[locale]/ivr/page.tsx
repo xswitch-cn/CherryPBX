@@ -228,17 +228,19 @@ export default function IvrPage() {
                   </div>
 
                   {/* 分页 */}
-                  <ListPagination
-                    currentPage={currentPage}
-                    pageCount={pageCount}
-                    pageSize={pageSize}
-                    totalCount={totalCount}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                    pageSizeOptions={PAGE_SIZE_OPTIONS}
-                    translationPrefix="table"
-                    showTotalCount={false}
-                  />
+                  <div className="[&>div]:!justify-end">
+                    <ListPagination
+                      currentPage={currentPage}
+                      pageCount={pageCount}
+                      pageSize={pageSize}
+                      totalCount={totalCount}
+                      onPageChange={handlePageChange}
+                      onPageSizeChange={handlePageSizeChange}
+                      pageSizeOptions={PAGE_SIZE_OPTIONS}
+                      translationPrefix="table"
+                      showTotalCount={false}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

@@ -18,6 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxInput,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from "@/components/ui/combobox";
 import { AudioPlayer } from "@/components/ui/audio-player";
 import { toast } from "sonner";
 import { ivrsApi } from "@/lib/api-client";
@@ -66,21 +74,20 @@ export function SelectRingFile({
   const [mfileTypes, setMfileTypes] = React.useState<MediaFile[]>([]);
   const [mfileType, setMfileType] = React.useState<string>("all");
   const [ringtones, setRingtones] = React.useState<MediaFile[]>([]);
+  const [localStreams, setLocalStreams] = React.useState<MediaFile[]>([]);
   const [mediaFiles, setMediaFiles] = React.useState<MediaFile[]>([]);
   const [selectedFileValue, setSelectedFileValue] = React.useState<string>("");
+  const [searchValue, setSearchValue] = React.useState<string>("");
 
   const getFileTypeLabel = (type: string): string => {
     const translations: Record<string, string> = {
       all: t("all"),
       ringtone: t("ringtone"),
+      LOCAL_STREAM: t("localStream"),
       ASR: t("asr"),
       SYSTEM: t("system"),
       TTS: t("tts"),
       UPLOAD: t("upload"),
-      LOCAL_STREAM: t("localStream"),
-      FAX: t("fax"),
-      RECORD: t("record"),
-      SCRIPT: t("script"),
     };
     return translations[type] || type;
   };
@@ -89,6 +96,7 @@ export function SelectRingFile({
     if (open) {
       void loadFileTypes();
       void loadRingtones();
+      void loadLocalStreams();
       void loadMediaFiles();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,9 +123,19 @@ export function SelectRingFile({
     }
   };
 
-  const loadMediaFiles = async (type?: string) => {
+  const loadLocalStreams = async () => {
     try {
-      const response = await ivrsApi.getMediaFiles(type);
+      const response = await ivrsApi.getLocalStreams();
+      const data = response.data as MediaFile[];
+      setLocalStreams(data);
+    } catch (error) {
+      console.error("Failed to load local streams:", error);
+    }
+  };
+
+  const loadMediaFiles = async (type?: string, search?: string) => {
+    try {
+      const response = await ivrsApi.getMediaFiles(type, search);
       const data = response.data as any;
       const filteredData = data.data?.filter(
         (item: MediaFile) => !notShowTypes.includes(item.type || ""),
@@ -131,21 +149,44 @@ export function SelectRingFile({
   const handleFileTypeChange = (type: string) => {
     setMfileType(type);
     setSelectedFileValue("");
-    if (type === "ringtone") {
+    setSearchValue("");
+    if (type === "ringtone" || type === "local_stream") {
       setMediaFiles([]);
     } else {
       void loadMediaFiles(type);
     }
   };
 
-  const handleFileSelect = (value: string) => {
-    setSelectedFileValue(value);
+  const handleFileSelect = (value: string | null) => {
+    const newValue = value || "";
+    setSelectedFileValue(newValue);
+    // Find the corresponding option to get its label for display
+    const option = fileOptions.find((opt) => opt.value === newValue);
+    if (option) {
+      setSearchValue(option.label);
+    } else if (newValue) {
+      setSearchValue(newValue);
+    } else {
+      setSearchValue("");
+    }
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+    if (mfileType !== "ringtone" && mfileType !== "local_stream") {
+      void loadMediaFiles(mfileType, value);
+    }
   };
 
   const getSelectedFile = (): MediaFile | null => {
     if (!selectedFileValue) return null;
     if (mfileType === "ringtone") {
       return ringtones.find((tone) => String(tone.id ?? tone.k) === selectedFileValue) || null;
+    }
+    if (mfileType === "local_stream") {
+      return (
+        localStreams.find((stream) => String(stream.id ?? stream.k) === selectedFileValue) || null
+      );
     }
     return mediaFiles.find((file) => String(file.id) === selectedFileValue) || null;
   };
@@ -162,6 +203,15 @@ export function SelectRingFile({
           rel_path: `tone_stream://${selectedFile.v}`,
         };
         onSelect(ringtone);
+      } else if (mfileType === "local_stream") {
+        const localStream: MediaFile = {
+          ...selectedFile,
+          type: "LOCAL_STREAM",
+          name: selectedFile.k || "",
+          abs_path: selectedFile.v || "",
+          rel_path: selectedFile.v || "",
+        };
+        onSelect(localStream);
       } else {
         onSelect(selectedFile);
       }
@@ -175,6 +225,9 @@ export function SelectRingFile({
     if (!file) return "";
     if (mfileType === "ringtone") {
       return `/api/tones/${file.v}`;
+    }
+    if (mfileType === "local_stream") {
+      return file.v || "";
     }
     if (!file.ext) {
       file.ext = getFileExt(file.abs_path || "");
@@ -194,13 +247,19 @@ export function SelectRingFile({
           label: `[${tone.k}] ${tone.v}`,
           file: tone,
         }))
-      : mediaFiles.map((file) => ({
-          value: String(file.id),
-          label: `${file.name} | ${file.description || ""} [${formatSizeUnits(
-            file.file_size || 0,
-          )}]`,
-          file,
-        }));
+      : mfileType === "local_stream"
+        ? localStreams.map((stream) => ({
+            value: String(stream.id ?? stream.k),
+            label: `[${stream.k}] ${stream.v}`,
+            file: stream,
+          }))
+        : mediaFiles.map((file) => ({
+            value: String(file.id),
+            label: `${file.name} | ${file.description || ""} [${formatSizeUnits(
+              file.file_size || 0,
+            )}]`,
+            file,
+          }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -216,6 +275,7 @@ export function SelectRingFile({
                 <SelectValue placeholder={t("selectFileType")} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="local_stream">{getFileTypeLabel("LOCAL_STREAM")}</SelectItem>
                 <SelectItem value="all">{getFileTypeLabel("all")}</SelectItem>
                 <SelectItem value="ringtone">{getFileTypeLabel("ringtone")}</SelectItem>
                 {mfileTypes.map((type) => (
@@ -229,25 +289,35 @@ export function SelectRingFile({
 
           <div className="space-y-2">
             <Label>文件</Label>
-            <Select value={selectedFileValue} onValueChange={handleFileSelect}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="输入名称查找文件" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {fileOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              value={selectedFileValue}
+              onValueChange={handleFileSelect}
+              onInputValueChange={handleSearch}
+              inputValue={searchValue}
+            >
+              <ComboboxInput placeholder="输入名称查找文件" />
+              <ComboboxContent>
+                <ComboboxEmpty>未找到匹配项</ComboboxEmpty>
+                <ComboboxList>
+                  {fileOptions.map((option) => (
+                    <ComboboxItem key={option.value} value={option.value}>
+                      {option.label}
+                    </ComboboxItem>
+                  ))}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
           </div>
 
           {selectedFile && (
             <div className="space-y-2">
               <Label>试听</Label>
               <AudioPlayer
-                text={mfileType === "ringtone" ? selectedFile.k || "" : selectedFile.name || ""}
+                text={
+                  mfileType === "ringtone" || mfileType === "local_stream"
+                    ? selectedFile.k || ""
+                    : selectedFile.name || ""
+                }
                 url={getMediaFileUrl(selectedFile)}
               />
             </div>

@@ -69,6 +69,7 @@ export interface IvrsApi {
   getRoutes(ivrId: number): ReturnType<ApiClient["request"]>;
   getFileTypes(): ReturnType<ApiClient["request"]>;
   getRingtones(): ReturnType<ApiClient["request"]>;
+  getLocalStreams(): ReturnType<ApiClient["request"]>;
   getMediaFiles(type?: string, search?: string): ReturnType<ApiClient["request"]>;
   getActionTypes(): ReturnType<ApiClient["request"]>;
   getConferenceProfiles(): ReturnType<ApiClient["request"]>;
@@ -176,6 +177,13 @@ export function createIvrsApi(client: ApiClient): IvrsApi {
       return client.request({
         method: "GET",
         path: "/api/dicts?realm=TONE",
+      });
+    },
+
+    getLocalStreams() {
+      return client.request({
+        method: "GET",
+        path: "/api/dicts?realm=LOCAL_STREAM",
       });
     },
 

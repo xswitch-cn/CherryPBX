@@ -14,6 +14,7 @@ import {
 import { EllipsisVerticalIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { sipApi } from "@/lib/api-client";
 
 interface TranslationFunctions {
   t: (key: string, params?: Record<string, any>) => string;
@@ -24,12 +25,27 @@ interface TranslationFunctions {
 export function createSipColumns({
   ts,
   tc,
+  onRefresh,
   router,
   onHandleDelete,
-}: TranslationFunctions & {
+}: TranslationFunctions & { onRefresh?: () => Promise<void> } & {
   router: ReturnType<typeof useRouter>;
   onHandleDelete: (sip: Sip) => void;
 }): ColumnDef<Sip>[] {
+  const handleAction = async (row: Sip, action: string) => {
+    try {
+      await sipApi.actions(row.id, { action });
+      await onRefresh?.();
+    } catch (error) {}
+  };
+
+  const handleToggleEnabled = async (row: Sip) => {
+    try {
+      await sipApi.toggles(row.id, { action: "toggle" });
+      await onRefresh?.();
+    } catch (error) {}
+  };
+
   return [
     {
       accessorKey: "id",
@@ -62,25 +78,59 @@ export function createSipColumns({
     {
       accessorKey: "disabled",
       header: () => tc("enabled"),
-      cell: () => {
-        return <Switch />;
+      cell: ({ row }) => {
+        return (
+          <Switch
+            checked={row.original.disabled === 0}
+            onCheckedChange={() => {
+              void handleToggleEnabled(row.original);
+            }}
+          />
+        );
       },
     },
     {
       id: "control",
       header: () => tc("control"),
-      cell: () => {
+      cell: ({ row }) => {
         return (
           <div className="flex items-center gap-1 flex-wrap">
             {/* 启动/停止按钮 - 未禁用时显示 */}
-            <Button variant="link" size="sm" className="h-auto p-0 text-primary">
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-primary"
+              onClick={() => void handleAction(row.original, "start")}
+            >
               {tc("start")}
             </Button>
             <Separator orientation="vertical" className="mx-1 h-4" />
-            <Button variant="link" size="sm" className="h-auto p-0 text-destructive">
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-destructive"
+              onClick={() => void handleAction(row.original, "stop")}
+            >
               {tc("stop")}
             </Button>
             <Separator orientation="vertical" className="mx-1 h-4" />
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-primary"
+              onClick={() => void handleAction(row.original, "restart")}
+            >
+              {tc("restart")}
+            </Button>
+            <Separator orientation="vertical" className="mx-1 h-4" />
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-primary"
+              onClick={() => void handleAction(row.original, "rescan")}
+            >
+              {tc("rescan")}
+            </Button>
           </div>
         );
       },

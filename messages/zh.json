@@ -1745,6 +1745,8 @@
     "Add Param": "添加参数",
      "Add Variable": "添加变量",
     "year": "年",
-    "month": "月"
+    "month": "月",
+    "restart": "重启",
+	  "rescan": "重新扫描"
   }
 }

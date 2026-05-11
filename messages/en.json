@@ -1385,7 +1385,9 @@
     "SIP Port": "SIP Port",
     "callSource": "Call Source",
     "Inbound Codec": "Inbound Codec",
-    "Outbound Codec": "Outbound Codec"
+    "Outbound Codec": "Outbound Codec",
+    "PROFILE ON": "PROFILE ON",
+	  "PROFILE OFF": "PROFILE OFF"
   },
   "license": {
     "createLicense": "Create License",

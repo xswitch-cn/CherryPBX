@@ -76,6 +76,11 @@ export function createSipColumns({
       },
     },
     {
+      accessorKey: "state",
+      header: () => ts("status"),
+      cell: ({ row }) => <span>{row.original.state ? ts("PROFILE ON") : ts("PROFILE OFF")}</span>,
+    },
+    {
       accessorKey: "disabled",
       header: () => tc("enabled"),
       cell: ({ row }) => {

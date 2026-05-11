@@ -30,6 +30,7 @@ export interface Sip {
   ocodec_expanded: string;
   icodec_expanded: string;
   params?: any[];
+  state?: string | undefined;
 }
 
 /**
@@ -83,7 +84,7 @@ export function createSipApi(client: ApiClient) {
     getUrlList() {
       return client.request({
         method: "GET",
-        path: "/api/sip_profiles/sip_ip",
+        path: "/api/sip_profiles/sip_status",
       });
     },
 

@@ -53,12 +53,18 @@ export default function SipPage() {
     try {
       const response = await sipApi.list();
       const sipParamsResponse = await sipApi.getSipParams();
-      // const sipUrlResponse = await sipApi.getUrlList();
-      // console.log(sipUrlResponse,'//.....sipUrlResponse');
-      console.log(response, "//.....response");
+      const sipUrlResponse: any = await sipApi.getUrlList();
+      const profiles: any = sipUrlResponse?.data?.profiles;
+      const responseData =
+        response?.data?.map((item) => {
+          return {
+            ...item,
+            url: profiles?.[item?.name]?.info?.url || "",
+            state: profiles?.[item?.name]?.status?.state || "",
+          };
+        }) || [];
       const sipParamsData: any = sipParamsResponse.data;
       setSipParams(sipParamsData.data || []);
-      const responseData = response.data;
       setSips(responseData || []);
     } catch (error) {
       console.error("Failed to load sips:", error);

@@ -1291,7 +1291,9 @@
     "SIP Port": "SIP端口",
     "callSource": "呼叫源",
     "Inbound Codec": "呼入编码",
-    "Outbound Codec": "呼出编码"
+    "Outbound Codec": "呼出编码",
+    "PROFILE ON": "已运行",
+	  "PROFILE OFF": "已停止"
   },
   "license": {
     "createLicense": "创建许可证",

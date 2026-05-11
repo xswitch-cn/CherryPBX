@@ -78,6 +78,38 @@ export function createSipApi(client: ApiClient) {
     },
 
     /**
+     * 获取 url 列表
+     */
+    getUrlList() {
+      return client.request({
+        method: "GET",
+        path: "/api/sip_profiles/sip_ip",
+      });
+    },
+
+    /**
+     * 启用
+     */
+    toggles(id: number, data: any) {
+      return client.request({
+        method: "PUT",
+        path: `api/sip_profiles/${id}`,
+        body: data,
+      });
+    },
+
+    /**
+     * 控制
+     */
+    actions(id: number, data: any) {
+      return client.request({
+        method: "PUT",
+        path: `api/sip_profiles/${id}/control`,
+        body: data,
+      });
+    },
+
+    /**
      * 创建 SIP Profile
      */
     create(data: CreateSipRequest) {

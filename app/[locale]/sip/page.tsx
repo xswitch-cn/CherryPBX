@@ -37,6 +37,9 @@ export default function SipPage() {
     t,
     ts,
     tc,
+    onRefresh: async () => {
+      await loadSips();
+    },
     router,
     onHandleDelete: (sip: Sip) => {
       setDeleteTarget(sip);
@@ -50,6 +53,9 @@ export default function SipPage() {
     try {
       const response = await sipApi.list();
       const sipParamsResponse = await sipApi.getSipParams();
+      // const sipUrlResponse = await sipApi.getUrlList();
+      // console.log(sipUrlResponse,'//.....sipUrlResponse');
+      console.log(response, "//.....response");
       const sipParamsData: any = sipParamsResponse.data;
       setSipParams(sipParamsData.data || []);
       const responseData = response.data;

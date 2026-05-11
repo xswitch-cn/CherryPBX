@@ -1918,7 +1918,9 @@
     "Add Param": "Add Parameter",
     "Add Variable": "Add Variable",
     "year": "Year",
-    "month": "Month"
+    "month": "Month",
+    "restart": "Restart",
+	  "rescan": "Rescan"
   },
   "gateways": {
     "createGateway": "Create Gateway",

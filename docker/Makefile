@@ -36,7 +36,12 @@ build-production: ## Build the production docker image.
 		--build-arg NEXT_PUBLIC_BACKEND_URL="$$NEXT_PUBLIC_BACKEND_URL" \
 		--build-arg NEXT_PUBLIC_BACKEND_URL_TARGET="$$NEXT_PUBLIC_BACKEND_URL_TARGET" \
 		-t $(IMAGE_NAME):$(IMAGE_TAG) \
+		-t xswitch.tencentcloudcr.com/free/ippbx:latest \
 		$(PROJECT_DIR)
+
+.PHONY: push-production
+push-production: ## Push the production docker image.
+	docker push xswitch.tencentcloudcr.com/free/ippbx:latest
 
 .PHONY: start-production
 start-production: ## Start trigger first, then web container.

@@ -47,7 +47,8 @@
     "diagnostics": "Diagnostics",
     "backup": "Backup & Restore",
     "settings": "Settings",
-    "getHelp": "Get Help"
+    "getHelp": "Get Help",
+    "github": "GitHub"
   },
   "dashboard": {
     "hostInfo": "Host Information",
@@ -1387,7 +1388,7 @@
     "Inbound Codec": "Inbound Codec",
     "Outbound Codec": "Outbound Codec",
     "PROFILE ON": "PROFILE ON",
-	  "PROFILE OFF": "PROFILE OFF"
+    "PROFILE OFF": "PROFILE OFF"
   },
   "license": {
     "createLicense": "Create License",
@@ -1922,7 +1923,7 @@
     "year": "Year",
     "month": "Month",
     "restart": "Restart",
-	  "rescan": "Rescan"
+    "rescan": "Rescan"
   },
   "gateways": {
     "createGateway": "Create Gateway",

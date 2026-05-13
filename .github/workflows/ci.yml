@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Tencent Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: xswitch.tencentcloudcr.com
+          username: ${{ secrets.DOCKER_LOGIN_USER }}
+          password: ${{ secrets.DOCKER_LOGIN_PASSWORD }}
+
+      - name: Install dependencies
+        run: cd docker && make env
+
+      - name: Build docker images
+        run: cd docker && make build-production
+
+      - name: Push docker images
+        run: cd docker && make push-production
+
+      - name: Deploy on remote server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: docker2.xswitch.cn
+          username: ${{ secrets.GIT_USER }}
+          key: ${{ secrets.GIT_TOKEN }}
+          port: 22
+          script: |
+            cd /data/cloud/cherrypbx
+            docker compose pull
+            docker compose down
+            docker compose up -d
+

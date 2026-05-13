@@ -49,8 +49,7 @@
 
 :root {
   --font-sans:
-    "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
-    sans-serif;
+    "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   --font-mono:
     "SFMono-Regular", "Cascadia Code", "Fira Code", "JetBrains Mono", Consolas, monospace;
   --background: oklch(1 0 0);

@@ -47,7 +47,8 @@
     "diagnostics": "故障诊断",
     "backup": "备份还原",
     "settings": "设置",
-    "getHelp": "获取帮助"
+    "getHelp": "获取帮助",
+    "github": "GitHub"
   },
   "dashboard": {
     "hostInfo": "主机信息",
@@ -1293,7 +1294,7 @@
     "Inbound Codec": "呼入编码",
     "Outbound Codec": "呼出编码",
     "PROFILE ON": "已运行",
-	  "PROFILE OFF": "已停止"
+    "PROFILE OFF": "已停止"
   },
   "license": {
     "createLicense": "创建许可证",
@@ -1745,10 +1746,10 @@
     "createParam": "创建参数",
     "description": "描述",
     "Add Param": "添加参数",
-     "Add Variable": "添加变量",
+    "Add Variable": "添加变量",
     "year": "年",
     "month": "月",
     "restart": "重启",
-	  "rescan": "重新扫描"
+    "rescan": "重新扫描"
   }
 }

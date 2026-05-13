@@ -18,6 +18,7 @@ import {
 import {
   LayoutDashboardIcon,
   Settings2Icon,
+  CircleHelpIcon,
   Github,
   CommandIcon,
   UsersIcon,
@@ -179,9 +180,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       //   icon: <Settings2Icon />,
       // },
       {
-        title: "GitHub",
-        url: "http://github.com/xswitch-cn/CherryPBX",
-        icon: <Github />,
+        title: t("getHelp"),
+        url: "http://github.com/xswitch-cn/CherryPBX/wiki",
+        icon: <CircleHelpIcon />,
       },
     ],
   };
